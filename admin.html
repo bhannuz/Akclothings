@@ -6,6 +6,19 @@
 <title>Admin – VAKON</title>
 <link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="css/style.css">
+<style>
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(170px,1fr));gap:12px;margin:14px 0 26px}
+.stat{border:3px solid var(--ink);border-radius:14px;padding:12px 14px;background:#fff}
+.stat b{display:block;font-size:1.4rem}
+.stat.good b{color:#0a8a4a}.stat.bad b{color:#d11a4a}
+.wrap{overflow-x:auto}
+table.t{width:100%;border-collapse:collapse;background:#fff;border:3px solid var(--ink);border-radius:12px}
+.t th,.t td{padding:8px 10px;border-bottom:1px solid #ddd;text-align:left;font-size:.9rem;vertical-align:top}
+.t th{background:#f4f1ff}
+.t input[type=number]{width:80px;padding:4px 8px}
+.low{color:#d11a4a;font-weight:700}
+.tabs.main{margin:10px 0 20px;flex-wrap:wrap}
+</style>
 </head>
 <body>
 <header>
@@ -15,25 +28,63 @@
 <main class="admin">
   <p id="gate" class="meta">Checking access...</p>
   <div id="panel" hidden>
-    <h1 class="section-title">Add a product</h1>
-    <form id="form" class="panel">
-      <label>Product photo<input id="image" type="file" accept="image/*" required></label>
-      <img id="preview" class="preview" alt="Photo preview" hidden>
-      <label>Name<input id="name" required placeholder="Cloud Oversized Tee"></label>
-      <div class="two">
-        <label>Category<input id="cat" list="cats" required placeholder="Tees"><datalist id="cats"></datalist></label>
-        <label>Price (₹)<input id="price" type="number" min="1" required placeholder="999"></label>
-      </div>
-      <div class="two">
-        <label>Sizes (comma separated)<input id="sizes" value="S,M,L,XL" required></label>
-        <label>Badge (optional)<input id="tag" placeholder="New"></label>
-      </div>
-      <label>Card background colour<input id="color" type="color" value="#ffb3d1"></label>
-      <p class="msg" id="msg" role="status"></p>
-      <button class="btn pink" id="save" type="submit">Add product</button>
-    </form>
-    <h2 class="section-title" style="margin-top:40px">Your products</h2>
-    <div id="list"></div>
+    <div class="tabs main" id="tabs">
+      <button class="chip" data-tab="dash" aria-pressed="true">Dashboard</button>
+      <button class="chip" data-tab="orders" aria-pressed="false">Orders</button>
+      <button class="chip" data-tab="users" aria-pressed="false">Users</button>
+      <button class="chip" data-tab="stock" aria-pressed="false">Stock</button>
+    </div>
+    <p class="msg" id="gmsg" role="status"></p>
+
+    <section id="tab-dash">
+      <h1 class="section-title">Profit &amp; loss</h1>
+      <div class="stats" id="stats"></div>
+      <h2 class="section-title">Expenses</h2>
+      <form id="expForm" class="panel">
+        <div class="two">
+          <label>Description<input id="expDesc" required placeholder="Rent, packaging, ads..."></label>
+          <label>Amount (₹)<input id="expAmt" type="number" min="1" required></label>
+        </div>
+        <button class="btn pink" type="submit">Add expense</button>
+      </form>
+      <div class="wrap" style="margin-top:14px"><table class="t" id="expList"></table></div>
+    </section>
+
+    <section id="tab-orders" hidden>
+      <h1 class="section-title">All orders</h1>
+      <div class="wrap"><table class="t" id="orderList"></table></div>
+    </section>
+
+    <section id="tab-users" hidden>
+      <h1 class="section-title">Users &amp; logins</h1>
+      <div class="wrap"><table class="t" id="userList"></table></div>
+    </section>
+
+    <section id="tab-stock" hidden>
+      <h1 class="section-title">Add a product</h1>
+      <form id="form" class="panel">
+        <label>Product photo<input id="image" type="file" accept="image/*" required></label>
+        <img id="preview" class="preview" alt="Photo preview" hidden>
+        <label>Name<input id="name" required placeholder="Cloud Oversized Tee"></label>
+        <div class="two">
+          <label>Category<input id="cat" list="cats" required placeholder="Tees"><datalist id="cats"></datalist></label>
+          <label>Selling price (₹)<input id="price" type="number" min="1" required placeholder="999"></label>
+        </div>
+        <div class="two">
+          <label>Cost price (₹)<input id="cost" type="number" min="0" required placeholder="500"></label>
+          <label>Opening stock (qty)<input id="stock" type="number" min="0" required placeholder="50"></label>
+        </div>
+        <div class="two">
+          <label>Sizes (comma separated)<input id="sizes" value="S,M,L,XL" required></label>
+          <label>Badge (optional)<input id="tag" placeholder="New"></label>
+        </div>
+        <label>Card background colour<input id="color" type="color" value="#ffb3d1"></label>
+        <p class="msg" id="msg" role="status"></p>
+        <button class="btn pink" id="save" type="submit">Add product</button>
+      </form>
+      <h2 class="section-title" style="margin-top:40px">Stock balance</h2>
+      <div class="wrap"><table class="t" id="list"></table></div>
+    </section>
   </div>
 </main>
 <script type="module" src="js/admin.js"></script>
