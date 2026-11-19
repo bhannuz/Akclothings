@@ -9,23 +9,24 @@ const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "
 const fmt = n => "₹" + Number(n || 0).toLocaleString("en-IN");
 const FIELDS = ["name", "phone", "address", "city", "pincode"];
 import { RETURN_DAYS } from "./config.js";
+import { display, realEmail, mobileOf } from "./id.js";
 let user;
 
 $("logout").onclick = () => signOut(auth).then(() => { location.href = "index.html"; });
 onAuthStateChanged(auth, async u => {
   if (!u) { location.href = "login.html?next=profile.html"; return; }
   user = u; $("gate").hidden = true; $("panel").hidden = false;
-  $("email").value = u.email || u.phoneNumber || "";
+  $("email").value = display(u);
   try {
     const d = (await getDoc(doc(db, "users", u.uid))).data() || {};
-    FIELDS.forEach(f => { $(f).value = d[f] || (f === "name" ? u.displayName || "" : f === "phone" ? (u.phoneNumber || "").replace("+91", "") : ""); });
+    FIELDS.forEach(f => { $(f).value = d[f] || (f === "name" ? u.displayName || "" : f === "phone" ? mobileOf(u.email) || (u.phoneNumber || "").replace("+91", "") : ""); });
   } catch (e) { console.warn(e); }
   loadOrders();
 });
 
 $("form").onsubmit = async e => {
   e.preventDefault(); say("Saving...", true);
-  const data = { email: user.email || "" };
+  const data = { email: realEmail(user) };
   FIELDS.forEach(f => { data[f] = $(f).value.trim(); });
   try { await setDoc(doc(db, "users", user.uid), data, { merge: true }); say("Saved.", true); }
   catch (err) { console.error(err); say(err.message.includes("permission") ? "Permission denied. Check your Firestore rules." : err.message); }

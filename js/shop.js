@@ -3,6 +3,7 @@ import { auth, db } from "./firebase.js";
 import { collection, getDocs, addDoc, getDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { SAMPLE_PRODUCTS } from "./data.js";
 import { UPI_ID } from "./config.js";
+import { realEmail } from "./id.js";
 import { getCart, addItem, changeQty, removeItem, clearCart } from "./cart.js";
 import { updateCount } from "./nav.js";
 
@@ -97,7 +98,7 @@ $("checkout").onclick = async () => {
   });
   const total = items.reduce((n, i) => n + i.price * i.qty, 0);
   try {
-    await addDoc(collection(db, "orders"), { uid: user.uid, email: user.email || "", name: prof.name || "", phone: prof.phone, address: [prof.address, prof.city, prof.pincode].filter(Boolean).join(", "), items, total, status: "new", paymentMethod: method, paymentRef: method === "upi" ? ref : "", paymentStatus: "pending", createdAt: serverTimestamp() });
+    await addDoc(collection(db, "orders"), { uid: user.uid, email: realEmail(user), name: prof.name || "", phone: prof.phone, address: [prof.address, prof.city, prof.pincode].filter(Boolean).join(", "), items, total, status: "new", paymentMethod: method, paymentRef: method === "upi" ? ref : "", paymentStatus: "pending", createdAt: serverTimestamp() });
     clearCart(); $("utr").value = ""; renderCart(); setCart(false); toast("Order placed. Thanks!");
   } catch (e) { console.error(e); toast("Order failed. Check your Firestore rules."); }
 };

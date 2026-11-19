@@ -3,6 +3,7 @@ import { auth } from "./firebase.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 import { cartCount } from "./cart.js";
 import { ADMIN_EMAILS } from "./config.js";
+import { display, realEmail, mobileOf } from "./id.js";
 
 export function updateCount() {
   const el = document.getElementById("count");
@@ -22,12 +23,12 @@ onAuthStateChanged(auth, user => {
   if (!btn) return;
   menu?.remove(); menu = null;
   if (user) {
-    const name = user.displayName || user.email?.split("@")[0] || user.phoneNumber;
+    const name = user.displayName || realEmail(user).split("@")[0] || mobileOf(user.email) || user.phoneNumber;
     hello.textContent = ""; btn.style.display = "none";
     menu = document.createElement("div"); menu.className = "menu";
     menu.innerHTML = `<button class="btn white sm" id="menuBtn">👤 ${esc(name)} ▾</button>
       <div class="dd" hidden>
-        <div class="who">${esc(user.email || user.phoneNumber)}</div>
+        <div class="who">${esc(display(user))}</div>
         <a href="profile.html">My profile &amp; address</a>
         <a href="profile.html#orders">My orders</a>
         ${ADMIN_EMAILS.includes(user.email) ? '<a href="admin.html">Admin panel</a>' : ""}

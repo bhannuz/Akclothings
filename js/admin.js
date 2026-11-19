@@ -68,7 +68,7 @@ function render() {
   const os = [...orders].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
   const opt = (list, cur) => list.map(s => `<option${s === cur ? " selected" : ""}>${s}</option>`).join("");
   $("orderList").innerHTML = `<tr><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Return</th></tr>` + (os.length ? os.map(o =>
-    `<tr><td>${when(o.createdAt)}</td><td>${esc(o.name || "")}<br>${esc(o.email)}<br>${esc(o.phone || "")}<br>${esc(o.address || "")}</td>
+    `<tr><td>${when(o.createdAt)}</td><td>${esc(o.name || "")}<br>${esc(o.email || "")}<br>${esc(o.phone || "")}<br>${esc(o.address || "")}</td>
     <td>${(o.items || []).map(i => `${esc(i.name)} (${esc(i.size)}) ×${i.qty}`).join("<br>")}</td><td>${fmt(o.total)}</td>
     <td>${esc((o.paymentMethod || "-").toUpperCase())}<br>${esc(o.paymentRef || "")}<br><select data-pay="${o.id}">${opt(["pending", "paid", "failed"], o.paymentStatus || "pending")}</select></td>
     <td><select data-status="${o.id}">${opt(STATUSES, o.status)}</select></td>
@@ -77,7 +77,7 @@ function render() {
   // Users
   const us = [...users].sort((a, b) => (b.lastLogin?.seconds || 0) - (a.lastLogin?.seconds || 0));
   $("userList").innerHTML = `<tr><th>Email</th><th>Name</th><th>First seen</th><th>Last login</th><th>Logins</th><th>Orders</th></tr>` + (us.length ? us.map(u =>
-    `<tr><td>${esc(u.email)}</td><td>${esc(u.name || "-")}</td><td>${when(u.createdAt)}</td><td>${when(u.lastLogin)}</td><td>${u.loginCount || 0}</td><td>${orders.filter(o => o.uid === u.id).length}</td></tr>`).join("") : `<tr><td colspan="6">No users yet.</td></tr>`);
+    `<tr><td>${esc(u.email || u.phone || u.phoneNumber || "-")}</td><td>${esc(u.name || "-")}</td><td>${when(u.createdAt)}</td><td>${when(u.lastLogin)}</td><td>${u.loginCount || 0}</td><td>${orders.filter(o => o.uid === u.id).length}</td></tr>`).join("") : `<tr><td colspan="6">No users yet.</td></tr>`);
 
   // Stock
   const cur = $("cat").value;
