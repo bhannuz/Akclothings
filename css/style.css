@@ -20,13 +20,6 @@ header{position:sticky;top:0;z-index:5;display:flex;justify-content:space-betwee
 #hello{font-weight:500}
 .ticker{background:var(--ink);color:#fff;text-align:center;overflow:hidden;white-space:nowrap}
 .ticker div{display:inline-block;padding:9px 0;font-size:.72rem;letter-spacing:.2em;text-transform:uppercase;animation:none}
-.hero{position:relative;min-height:78vh;display:grid;align-items:center;padding:8vh 7vw;color:#fff;background:linear-gradient(110deg,#141311 0%,#2a2620 55%,#4a4034 100%);overflow:hidden}
-.hero::after{content:"VAKON";position:absolute;right:-2vw;bottom:-6vw;font-family:'Jost',sans-serif;font-size:clamp(8rem,26vw,24rem);letter-spacing:.1em;color:rgba(255,255,255,.05);line-height:1;pointer-events:none}
-.hero small{display:block;font-family:'Jost',sans-serif;letter-spacing:.4em;text-transform:uppercase;font-size:.78rem;color:#d9c7a6;margin-bottom:18px}
-.hero h1{font-size:clamp(3rem,8vw,6.5rem);line-height:1;font-weight:500;max-width:12ch}
-.hero p{font-size:1.05rem;margin:20px 0 32px;max-width:42ch;color:#d8d4cc}
-.hero .btn{background:#fff;color:var(--ink);border-color:#fff}
-.hero .btn:hover{background:transparent;color:#fff}
 .perks{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));border-bottom:1px solid var(--line);text-align:center}
 .perks div{padding:18px 10px;font-size:.74rem;letter-spacing:.16em;text-transform:uppercase;color:var(--mute)}
 main{max-width:1280px;margin:auto;padding:50px 5vw 100px}
@@ -87,7 +80,7 @@ footer{background:var(--ink);color:#bdb8ae;padding:40px 5vw;text-align:center;fo
 .panel{display:grid;gap:14px;background:#fff;border:1px solid var(--line);padding:22px}
 .two{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .preview{max-height:150px;object-fit:contain;justify-self:start}
-@media (max-width:800px){.hero{min-height:64vh}.two{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr);gap:26px 12px}}
+@media (max-width:800px){.two{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr);gap:26px 12px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 .foot label{display:grid;gap:4px;font-size:.8rem;font-weight:500}
 .foot select{width:100%}
@@ -118,7 +111,7 @@ body:has(aside.open){overflow:hidden}
   .btn.sm{padding:8px 12px}
   input,select,textarea{font-size:16px}
   main{padding:30px 4vw 70px}
-  .hero{min-height:60vh;padding:6vh 6vw}
+  
   .tools{width:100%}
   .tools input,.tools select{flex:1;min-width:0}
   .grid{gap:22px 10px}
@@ -131,3 +124,19 @@ body:has(aside.open){overflow:hidden}
   .section-title{font-size:1.9rem}
   .ticker div{font-size:.62rem;letter-spacing:.12em}
 }
+
+/* ---- Wear[M]e: logo, image hero, Everyday Edit ---- */
+.logo{display:block;line-height:0}
+.logo img{display:block;height:24px;width:auto}
+.sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
+.hero{position:relative;background:#111}
+.hero img{display:block;width:100%;height:clamp(300px,56vw,620px);object-fit:cover;object-position:center 50%}
+.hero .btn{position:absolute;left:50%;bottom:8%;transform:translateX(-50%);background:#fff;color:var(--ink);border-color:#fff}
+.hero .btn:hover{background:transparent;color:#fff}
+.edit{max-width:1200px;margin:auto;padding:80px 5vw 10px;display:grid;grid-template-columns:1.35fr 1fr;gap:56px;align-items:center}
+.edit img{display:block;width:100%;height:auto}
+.eyebrow{font-family:'Jost',sans-serif;letter-spacing:.3em;text-transform:uppercase;font-size:.74rem;color:var(--accent)}
+.edit h2{font-size:clamp(2.4rem,5vw,3.6rem);line-height:1.05;margin:8px 0 14px}
+.edit p:not(.eyebrow){color:var(--mute);margin-bottom:26px;max-width:38ch}
+@media (max-width:800px){.edit{grid-template-columns:1fr;gap:28px;padding-top:50px}}
+@media (max-width:600px){.logo img{height:19px}.hero .btn{bottom:6%}}
