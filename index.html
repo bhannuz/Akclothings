@@ -3,30 +3,39 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>VAKON – Fits that hit</title>
-<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<title>Wear[M]e – Men wear me.</title>
+<meta name="description" content="Wear[M]e. Everyday clothing for men.">
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
 <header>
-  <a class="logo" href="index.html">VAKON</a>
+  <a class="logo" href="index.html"><img src="assets/logo-header.svg" alt="Wear[M]e"></a>
   <div class="actions">
     <span id="hello"></span>
     <button class="btn white sm" id="authBtn">Log in</button>
     <button class="btn sm" id="openCart">Bag (<span id="count">0</span>)</button>
   </div>
 </header>
-<div class="ticker"><div>Free shipping over ₹500 &nbsp;·&nbsp; Easy 7-day returns &nbsp;·&nbsp; New season now live</div></div>
-
 <section class="hero">
+  <h1 class="sr">Wear[M]e. Men wear me.</h1>
+  <img src="assets/images/hero.jpg" alt="Wear[M]e logo in gold on black, with the line Men wear me." fetchpriority="high">
+  <a class="btn" href="#shop">Shop the drop</a>
+</section>
+<div class="ticker"><div>Free shipping over ₹500 &nbsp;·&nbsp; Easy 7-day returns &nbsp;·&nbsp; New season now live</div></div>
+<div class="perks"><div>Free shipping over ₹500</div><div>Easy returns</div><div>Secure checkout</div></div>
+
+<section class="edit" id="edit">
+  <img src="assets/images/everyday-edit.jpg" alt="Wear[M]e dark tee with a cardstock hang tag and a woven neck label" loading="lazy">
   <div>
-    <small>New Season</small>
-    <h1>The Everyday Edit</h1>
+    <p class="eyebrow">New Season</p>
+    <h2>The Everyday Edit</h2>
     <p>Oversized tees, relaxed denim and hoodies, cut for comfort and made to last.</p>
-    <a class="btn" href="#shop">Shop now</a>
+    <a class="btn dark" href="#shop">Shop now</a>
   </div>
 </section>
-<div class="perks"><div>Free shipping over ₹500</div><div>Easy returns</div><div>Secure checkout</div></div>
 
 <main id="shop">
   <h2 class="section-title">New Arrivals</h2>
@@ -42,7 +51,7 @@
   <div class="grid" id="grid"></div>
 </main>
 
-<footer>© 2026 VAKON. All rights reserved. Free shipping on orders over ₹500.</footer>
+<footer>© 2026 Wear[M]e. All rights reserved. Free shipping on orders over ₹500.</footer>
 
 <div class="overlay" id="overlay"></div>
 <aside id="drawer" aria-label="Shopping bag" aria-hidden="true">
