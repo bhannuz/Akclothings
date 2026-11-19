@@ -89,3 +89,5 @@ footer{background:var(--ink);color:#bdb8ae;padding:40px 5vw;text-align:center;fo
 .preview{max-height:150px;object-fit:contain;justify-self:start}
 @media (max-width:800px){.hero{min-height:64vh}.two{grid-template-columns:1fr}.grid{grid-template-columns:repeat(2,1fr);gap:26px 12px}}
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.foot label{display:grid;gap:4px;font-size:.8rem;font-weight:500}
+.foot select{width:100%}
