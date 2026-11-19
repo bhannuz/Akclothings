@@ -65,7 +65,7 @@ function render() {
   // Orders
   const os = [...orders].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
   $("orderList").innerHTML = `<tr><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th></tr>` + (os.length ? os.map(o =>
-    `<tr><td>${when(o.createdAt)}</td><td>${esc(o.email)}</td><td>${(o.items || []).map(i => `${esc(i.name)} (${esc(i.size)}) ×${i.qty}`).join("<br>")}</td><td>${fmt(o.total)}</td>
+    `<tr><td>${when(o.createdAt)}</td><td>${esc(o.name || "")}<br>${esc(o.email)}<br>${esc(o.phone || "")}<br>${esc(o.address || "")}</td><td>${(o.items || []).map(i => `${esc(i.name)} (${esc(i.size)}) ×${i.qty}`).join("<br>")}</td><td>${fmt(o.total)}</td>
     <td><select data-status="${o.id}">${STATUSES.map(s => `<option${s === o.status ? " selected" : ""}>${s}</option>`).join("")}</select></td></tr>`).join("") : `<tr><td colspan="5">No orders yet.</td></tr>`);
 
   // Users

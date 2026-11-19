@@ -1,6 +1,6 @@
 // Shop page: products, filters, cart drawer, checkout.
 import { auth, db } from "./firebase.js";
-import { collection, getDocs, addDoc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, getDocs, addDoc, getDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { SAMPLE_PRODUCTS } from "./data.js";
 import { getCart, addItem, changeQty, removeItem, clearCart } from "./cart.js";
 import { updateCount } from "./nav.js";
@@ -81,13 +81,16 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") setCart(fals
 $("checkout").onclick = async () => {
   const user = auth.currentUser;
   if (!user) { toast("Log in to place your order"); setTimeout(() => { location.href = "login.html"; }, 900); return; }
+  let prof = {};
+  try { prof = (await getDoc(doc(db, "users", user.uid))).data() || {}; } catch (e) {}
+  if (!prof.address || !prof.phone) { toast("Add your delivery address first"); setTimeout(() => { location.href = "profile.html"; }, 900); return; }
   const items = getCart().map(i => {
     const p = PRODUCTS.find(x => x.id === i.id);
     return { id: i.id, name: p.name, size: i.size, qty: i.qty, price: p.price, cost: p.cost || 0 };
   });
   const total = items.reduce((n, i) => n + i.price * i.qty, 0);
   try {
-    await addDoc(collection(db, "orders"), { uid: user.uid, email: user.email, items, total, status: "new", createdAt: serverTimestamp() });
+    await addDoc(collection(db, "orders"), { uid: user.uid, email: user.email, name: prof.name || "", phone: prof.phone, address: [prof.address, prof.city, prof.pincode].filter(Boolean).join(", "), items, total, status: "new", createdAt: serverTimestamp() });
     clearCart(); renderCart(); setCart(false); toast("Order placed. Thanks!");
   } catch (e) { console.error(e); toast("Order failed. Check your Firestore rules."); }
 };

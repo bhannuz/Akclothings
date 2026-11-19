@@ -66,7 +66,7 @@ const next = new URLSearchParams(location.search).get("next");
 onAuthStateChanged(auth, async user => {
   if (!user) return;
   try {
-    await setDoc(doc(db, "users", user.uid), { email: user.email, name: user.displayName || "", createdAt: new Date(user.metadata.creationTime), lastLogin: serverTimestamp(), loginCount: increment(1) }, { merge: true });
+    await setDoc(doc(db, "users", user.uid), { email: user.email, ...(user.displayName ? { name: user.displayName } : {}), createdAt: new Date(user.metadata.creationTime), lastLogin: serverTimestamp(), loginCount: increment(1) }, { merge: true });
   } catch (e) { console.warn("Could not save user profile", e); }
   location.href = /^[\w-]+\.html$/.test(next || "") ? next : "index.html";
 });
