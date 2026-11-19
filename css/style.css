@@ -130,8 +130,8 @@ body:has(aside.open){overflow:hidden}
 .logo img{display:block;height:24px;width:auto}
 .sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0)}
 .hero{position:relative;background:#111}
-.hero img{display:block;width:100%;height:clamp(300px,56vw,620px);object-fit:cover;object-position:center 50%}
-.hero .btn{position:absolute;left:50%;bottom:8%;transform:translateX(-50%);background:#fff;color:var(--ink);border-color:#fff}
+.hero img{display:block;width:100%;height:clamp(240px,34vw,440px);object-fit:cover;object-position:center 75%}
+.hero .btn{position:absolute;left:50%;bottom:18px;transform:translateX(-50%);background:#fff;color:var(--ink);border-color:#fff}
 .hero .btn:hover{background:transparent;color:#fff}
 .edit{max-width:1200px;margin:auto;padding:80px 5vw 10px;display:grid;grid-template-columns:1.35fr 1fr;gap:56px;align-items:center}
 .edit img{display:block;width:100%;height:auto}
@@ -139,4 +139,9 @@ body:has(aside.open){overflow:hidden}
 .edit h2{font-size:clamp(2.4rem,5vw,3.6rem);line-height:1.05;margin:8px 0 14px}
 .edit p:not(.eyebrow){color:var(--mute);margin-bottom:26px;max-width:38ch}
 @media (max-width:800px){.edit{grid-template-columns:1fr;gap:28px;padding-top:50px}}
-@media (max-width:600px){.logo img{height:19px}.hero .btn{bottom:6%}}
+@media (max-width:600px){.logo img{height:19px}.hero .btn{bottom:14px}}
+
+/* ---- Fallbacks if the assets folder is missing ---- */
+.logo-txt{font-family:'Jost',sans-serif;font-weight:500;font-size:1.3rem;letter-spacing:.3em;color:var(--ink)}
+.hero-fb{display:none;height:clamp(240px,34vw,440px);place-items:center;text-align:center;color:#c9a55c;font-family:'Cormorant Garamond',Georgia,serif;font-weight:600;font-size:clamp(2.6rem,9vw,6rem);letter-spacing:.14em;line-height:1.1}
+.hero-fb small{display:block;font-family:'Jost',sans-serif;font-size:clamp(.7rem,1.6vw,1rem);letter-spacing:.5em;margin-top:14px}
