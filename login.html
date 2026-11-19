@@ -19,21 +19,13 @@
     <div class="tabs">
       <button class="chip" id="tabLogin" aria-pressed="true" type="button">Log in</button>
       <button class="chip" id="tabSignup" aria-pressed="false" type="button">Sign up</button>
-      <button class="chip" id="tabPhone" aria-pressed="false" type="button">Mobile</button>
     </div>
     <form id="form">
       <div id="emailBox" style="display:grid;gap:14px">
-        <label>Email<input id="email" type="email" autocomplete="email" required></label>
+        <label>Email or mobile number<input id="email" type="text" autocomplete="username" placeholder="you@mail.com or 10-digit mobile" required></label>
         <label>Password<input id="password" type="password" minlength="6" autocomplete="current-password" required></label>
         <button class="link" id="forgot" type="button">Forgot password?</button>
         <button class="btn pink" id="submit" type="submit">Log in</button>
-      </div>
-      <div id="phoneBox" style="display:none;gap:14px">
-        <label>Mobile number<input id="phone" type="tel" inputmode="numeric" placeholder="10-digit number (+91)" autocomplete="tel"></label>
-        <label id="otpLabel" hidden>OTP<input id="otp" inputmode="numeric" maxlength="6" placeholder="6-digit code" autocomplete="one-time-code"></label>
-        <button class="btn pink" id="sendOtp" type="button">Send OTP</button>
-        <button class="btn pink" id="verifyOtp" type="button" hidden>Verify &amp; continue</button>
-        <p class="meta">New number? An account is created automatically.</p>
       </div>
       <p class="msg" id="msg" role="status"></p>
     </form>
