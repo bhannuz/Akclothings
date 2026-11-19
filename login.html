@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Log in – VAKON</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+  <a class="logo" href="index.html">VAKON</a>
+  <a class="btn white sm" href="index.html">Back to shop</a>
+</header>
+
+<div class="auth-wrap">
+  <div class="auth">
+    <h1 id="title">Welcome back</h1>
+    <div class="tabs">
+      <button class="chip" id="tabLogin" aria-pressed="true" type="button">Log in</button>
+      <button class="chip" id="tabSignup" aria-pressed="false" type="button">Sign up</button>
+    </div>
+    <form id="form">
+      <label>Email<input id="email" type="email" autocomplete="email" required></label>
+      <label>Password<input id="password" type="password" minlength="6" autocomplete="current-password" required></label>
+      <button class="link" id="forgot" type="button">Forgot password?</button>
+      <p class="msg" id="msg" role="status"></p>
+      <button class="btn pink" id="submit" type="submit">Log in</button>
+    </form>
+    <p class="or">or</p>
+    <button class="btn white" id="google" type="button" style="width:100%">Continue with Google</button>
+  </div>
+</div>
+
+<script type="module" src="js/login.js"></script>
+</body>
+</html>
