@@ -1,7 +1,7 @@
 // Profile page: edit name/phone/address, see my orders.
 import { auth, db } from "./firebase.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { doc, getDoc, setDoc, updateDoc, addDoc, serverTimestamp, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const $ = id => document.getElementById(id);
 const say = (t, ok = false) => { $("msg").textContent = t; $("msg").className = "msg" + (ok ? " ok" : ""); };
@@ -20,15 +20,19 @@ onAuthStateChanged(auth, async u => {
   try {
     const d = (await getDoc(doc(db, "users", u.uid))).data() || {};
     FIELDS.forEach(f => { $(f).value = d[f] || (f === "name" ? u.displayName || "" : f === "phone" ? mobileOf(u.email) || (u.phoneNumber || "").replace("+91", "") : ""); });
+    $("opt").checked = !!d.marketingOptIn;
   } catch (e) { console.warn(e); }
-  loadOrders();
+  loadOrders(); loadReqs();
 });
 
 $("form").onsubmit = async e => {
   e.preventDefault(); say("Saving...", true);
   const data = { email: realEmail(user) };
   FIELDS.forEach(f => { data[f] = $(f).value.trim(); });
-  try { await setDoc(doc(db, "users", user.uid), data, { merge: true }); say("Saved.", true); }
+  data.marketingOptIn = $("opt").checked;
+  try { await setDoc(doc(db, "users", user.uid), data, { merge: true }); say("Saved.", true);
+    const ph = data.phone.replace(/\D/g, "").slice(-10);
+    if (ph.length === 10) setDoc(doc(db, "phoneIndex", ph), { uid: user.uid, email: user.email }).catch(() => {}); }
   catch (err) { console.error(err); say(err.message.includes("permission") ? "Permission denied. Check your Firestore rules." : err.message); }
 };
 
@@ -50,4 +54,23 @@ $("list").onclick = async e => {
   const reason = prompt("Reason for return?"); if (!reason) return;
   try { await updateDoc(doc(db, "orders", id), { returnStatus: "requested", returnReason: reason.trim(), returnRequestedAt: serverTimestamp() }); loadOrders(); }
   catch (err) { console.error(err); alert("Couldn't request return. Check Firestore rules."); }
+};
+
+async function loadReqs() {
+  try {
+    const snap = await getDocs(query(collection(db, "requests"), where("uid", "==", user.uid)));
+    const rows = snap.docs.map(d => d.data()).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+    $("reqList").innerHTML = `<tr><th>Date</th><th>Type</th><th>Message</th><th>Status</th></tr>` + (rows.length ? rows.map(r =>
+      `<tr><td>${r.createdAt?.toDate ? r.createdAt.toDate().toLocaleString("en-IN") : "-"}</td><td>${esc(r.type)}</td><td>${esc(r.message)}</td><td>${esc(r.status)}</td></tr>`).join("") : `<tr><td colspan="4">No requests yet.</td></tr>`);
+  } catch (err) { console.error(err); }
+}
+$("reqForm").onsubmit = async e => {
+  e.preventDefault();
+  try {
+    await addDoc(collection(db, "requests"), {
+      uid: user.uid, name: $("name").value.trim(), email: user.email || "", phone: $("phone").value.trim(),
+      type: $("rType").value, message: $("rMsg").value.trim(), status: "open", createdAt: serverTimestamp()
+    });
+    $("reqForm").reset(); $("rmsg").textContent = "Sent. We'll get back to you."; $("rmsg").className = "msg ok"; loadReqs();
+  } catch (err) { console.error(err); $("rmsg").textContent = "Couldn't send. Check Firestore rules."; $("rmsg").className = "msg"; }
 };

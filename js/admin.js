@@ -11,7 +11,7 @@ const fmt = n => "₹" + Number(n || 0).toLocaleString("en-IN");
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const when = t => t?.toDate ? t.toDate().toLocaleString("en-IN") : "-";
 const STATUSES = ["new", "shipped", "delivered", "cancelled"];
-let products = [], orders = [], users = [], expenses = [], cats = [];
+let products = [], orders = [], users = [], expenses = [], cats = [], reqs = [];
 
 onAuthStateChanged(auth, user => {
   if (!user) { location.href = "login.html?next=admin.html"; return; }
@@ -27,7 +27,7 @@ $("logout").onclick = () => signOut(auth).then(() => { location.href = "index.ht
 $("tabs").onclick = e => {
   const t = e.target.dataset.tab; if (!t) return;
   document.querySelectorAll("#tabs .chip").forEach(b => b.setAttribute("aria-pressed", b.dataset.tab === t));
-  ["dash", "orders", "users", "stock", "cats"].forEach(n => { $("tab-" + n).hidden = n !== t; });
+  ["dash", "orders", "users", "reqs", "stock", "cats"].forEach(n => { $("tab-" + n).hidden = n !== t; });
 };
 
 async function load(name) {
@@ -37,7 +37,7 @@ async function load(name) {
 async function loadAll() {
   gsay("");
   try {
-    [products, orders, users, expenses, cats] = await Promise.all(["products", "orders", "users", "expenses", "categories"].map(load));
+    [products, orders, users, expenses, cats, reqs] = await Promise.all(["products", "orders", "users", "expenses", "categories", "requests"].map(load));
   } catch (err) {
     console.error(err);
     gsay(err.message.includes("permission") ? "Permission denied. Update your Firestore rules (admin must read orders, users, expenses)." : err.message);
@@ -60,7 +60,9 @@ function render() {
     stat("Expenses", fmt(exp)) + stat(net >= 0 ? "Net profit" : "Net loss", fmt(Math.abs(net)), net >= 0 ? "good" : "bad") +
     stat("Stock value (at cost)", fmt(stockVal)) + stat("Orders", live().length + " / " + orders.length) + stat("Users", users.length) +
     stat("Payments received", fmt(live().filter(o => o.paymentStatus === "paid").reduce((n, o) => n + (o.total || 0), 0))) +
-    stat("Returns pending", orders.filter(o => o.returnStatus === "requested").length, orders.some(o => o.returnStatus === "requested") ? "bad" : "");
+    stat("Returns pending", orders.filter(o => o.returnStatus === "requested").length, orders.some(o => o.returnStatus === "requested") ? "bad" : "") +
+    stat("New customers (7 days)", users.filter(u => Date.now() - (u.createdAt?.seconds || 0) * 1000 < 7 * 864e5).length) +
+    stat("Open requests", reqs.filter(r => r.status !== "resolved").length, reqs.some(r => r.status === "open") ? "bad" : "");
   $("expList").innerHTML = `<tr><th>Date</th><th>Description</th><th>Amount</th><th></th></tr>` + (expenses.length ? expenses.map(e =>
     `<tr><td>${when(e.createdAt)}</td><td>${esc(e.desc)}</td><td>${fmt(e.amount)}</td><td><button class="btn sm white" data-delexp="${e.id}">Delete</button></td></tr>`).join("") : `<tr><td colspan="4">No expenses yet.</td></tr>`);
 
@@ -74,10 +76,7 @@ function render() {
     <td><select data-status="${o.id}">${opt(STATUSES, o.status)}</select></td>
     <td>${o.returnStatus ? `${esc(o.returnReason || "")}<br><select data-ret="${o.id}">${opt(["requested", "approved", "rejected", "refunded"], o.returnStatus)}</select>` : "-"}</td></tr>`).join("") : `<tr><td colspan="7">No orders yet.</td></tr>`);
 
-  // Users
-  const us = [...users].sort((a, b) => (b.lastLogin?.seconds || 0) - (a.lastLogin?.seconds || 0));
-  $("userList").innerHTML = `<tr><th>Email</th><th>Name</th><th>First seen</th><th>Last login</th><th>Logins</th><th>Orders</th></tr>` + (us.length ? us.map(u =>
-    `<tr><td>${esc(u.email || u.phone || u.phoneNumber || "-")}</td><td>${esc(u.name || "-")}</td><td>${when(u.createdAt)}</td><td>${when(u.lastLogin)}</td><td>${u.loginCount || 0}</td><td>${orders.filter(o => o.uid === u.id).length}</td></tr>`).join("") : `<tr><td colspan="6">No users yet.</td></tr>`);
+  renderUsers(); renderReqs();
 
   // Stock
   const cur = $("cat").value;
@@ -167,9 +166,9 @@ document.addEventListener("click", async e => {
 });
 document.addEventListener("change", async e => {
   const d = e.target.dataset || {}, v = e.target.value;
-  const patch = d.status ? { status: v, ...(v === "delivered" ? { deliveredAt: serverTimestamp() } : {}) } : d.pay ? { paymentStatus: v } : d.ret ? { returnStatus: v } : null;
+  const patch = d.req ? { status: v } : d.status ? { status: v, ...(v === "delivered" ? { deliveredAt: serverTimestamp() } : {}) } : d.pay ? { paymentStatus: v } : d.ret ? { returnStatus: v } : null;
   if (!patch) return;
-  try { await updateDoc(doc(db, "orders", d.status || d.pay || d.ret), patch); loadAll(); }
+  try { await updateDoc(doc(db, d.req ? "requests" : "orders", d.req || d.status || d.pay || d.ret), patch); loadAll(); }
   catch (err) { gsay(err.message); }
 });
 async function addCat(name) {
@@ -183,3 +182,40 @@ $("catForm").onsubmit = async e => {
 $("catDefaults").onclick = async () => {
   try { for (const n of ["Tees", "Bottoms", "Hoodies", "Jackets"]) await addCat(n); loadAll(); } catch (err) { gsay(err.message); }
 };
+
+// ---- Customers & requests ----
+const phoneOf = u => u.phone || u.phoneNumber || "";
+const byNew = (a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0);
+function filteredUsers() {
+  const q = $("userSearch").value.trim().toLowerCase();
+  return [...users].sort(byNew).filter(u => !q || [u.name, u.email, phoneOf(u), u.city, u.pincode].join(" ").toLowerCase().includes(q));
+}
+function renderUsers() {
+  const age = u => Date.now() - (u.createdAt?.seconds || 0) * 1000;
+  const box = (l, v) => `<div class="stat"><span class="meta">${l}</span><b>${v}</b></div>`;
+  $("userStats").innerHTML = box("Total customers", users.length) + box("New today", users.filter(u => age(u) < 864e5).length) +
+    box("New this week", users.filter(u => age(u) < 7 * 864e5).length) + box("Alerts opted in", users.filter(u => u.marketingOptIn).length) +
+    box("With address", users.filter(u => u.address).length);
+  const us = filteredUsers();
+  $("userList").innerHTML = `<tr><th>Name</th><th>Email</th><th>Mobile</th><th>Address</th><th>Joined</th><th>Last login</th><th>Logins</th><th>Orders</th><th>Alerts</th></tr>` + (us.length ? us.map(u =>
+    `<tr><td>${esc(u.name || "-")}</td><td>${esc(u.email || "-")}</td><td>${esc(phoneOf(u) || "-")}</td><td>${esc([u.address, u.city, u.pincode].filter(Boolean).join(", ") || "-")}</td>
+    <td>${when(u.createdAt)}</td><td>${when(u.lastLogin)}</td><td>${u.loginCount || 0}</td><td>${orders.filter(o => o.uid === u.id).length}</td><td>${u.marketingOptIn ? "Yes" : "No"}</td></tr>`).join("") : `<tr><td colspan="9">No customers found.</td></tr>`);
+}
+function renderReqs() {
+  const rs = [...reqs].sort(byNew);
+  const open = reqs.filter(r => r.status !== "resolved").length;
+  document.querySelector('[data-tab="reqs"]').textContent = "Requests" + (open ? " (" + open + ")" : "");
+  $("reqList").innerHTML = `<tr><th>Date</th><th>Customer</th><th>Type</th><th>Message</th><th>Status</th></tr>` + (rs.length ? rs.map(r =>
+    `<tr><td>${when(r.createdAt)}</td><td>${esc(r.name || "")}<br>${esc(r.email || "")}<br>${esc(r.phone || "")}</td><td>${esc(r.type)}</td><td>${esc(r.message)}</td>
+    <td><select data-req="${r.id}">${["open", "in progress", "resolved"].map(s => `<option${s === r.status ? " selected" : ""}>${s}</option>`).join("")}</select></td></tr>`).join("") : `<tr><td colspan="5">No requests yet.</td></tr>`);
+}
+$("userSearch").oninput = renderUsers;
+function exportCsv(list, file) {
+  const rows = [["Name", "Email", "Mobile", "Address", "City", "Pincode", "Joined", "Alerts"], ...list.map(u =>
+    [u.name, u.email, phoneOf(u), u.address, u.city, u.pincode, when(u.createdAt), u.marketingOptIn ? "Yes" : "No"])];
+  const csv = rows.map(r => r.map(v => '"' + String(v ?? "").replace(/"/g, '""') + '"').join(",")).join("\n");
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(new Blob([csv], { type: "text/csv" })); a.download = file; a.click();
+}
+$("exAll").onclick = () => exportCsv(filteredUsers(), "customers.csv");
+$("exOpt").onclick = () => exportCsv(filteredUsers().filter(u => u.marketingOptIn), "alert-list.csv");
