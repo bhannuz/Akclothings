@@ -33,6 +33,7 @@ table.t{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e4
       <button class="chip" data-tab="orders" aria-pressed="false">Orders</button>
       <button class="chip" data-tab="users" aria-pressed="false">Users</button>
       <button class="chip" data-tab="stock" aria-pressed="false">Stock</button>
+      <button class="chip" data-tab="cats" aria-pressed="false">Categories</button>
     </div>
     <p class="msg" id="gmsg" role="status"></p>
 
@@ -60,6 +61,16 @@ table.t{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e4
       <div class="wrap"><table class="t" id="userList"></table></div>
     </section>
 
+    <section id="tab-cats" hidden>
+      <h1 class="section-title">Categories</h1>
+      <form id="catForm" class="panel">
+        <label>New category<input id="catName" required placeholder="Tees"></label>
+        <button class="btn pink" type="submit">Add category</button>
+        <button class="btn white" type="button" id="catDefaults">Add defaults (Tees, Bottoms, Hoodies, Jackets)</button>
+      </form>
+      <div class="wrap" style="margin-top:14px"><table class="t" id="catList"></table></div>
+    </section>
+
     <section id="tab-stock" hidden>
       <h1 class="section-title">Add a product</h1>
       <form id="form" class="panel">
@@ -67,7 +78,7 @@ table.t{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e4
         <img id="preview" class="preview" alt="Photo preview" hidden>
         <label>Name<input id="name" required placeholder="Cloud Oversized Tee"></label>
         <div class="two">
-          <label>Category<input id="cat" list="cats" required placeholder="Tees"><datalist id="cats"></datalist></label>
+          <label>Category<select id="cat" required></select></label>
           <label>Selling price (₹)<input id="price" type="number" min="1" required placeholder="999"></label>
         </div>
         <div class="two">

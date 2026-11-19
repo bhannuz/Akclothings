@@ -50,7 +50,15 @@
   <div class="items" id="items"></div>
   <div class="foot">
     <div class="total"><span>Total</span><span id="total">₹0</span></div>
-    <button class="btn dark" id="checkout" disabled>Checkout</button>
+    <label>Payment method
+      <select id="pay"><option value="cod">Cash on delivery</option><option value="upi">UPI (pay now)</option></select>
+    </label>
+    <div id="upiBox" hidden>
+      <p class="meta">Pay to UPI ID <b id="upiId"></b>, then enter the transaction ID.</p>
+      <input id="utr" placeholder="UPI transaction / UTR number" style="width:100%;margin-top:6px">
+    </div>
+    <p class="meta">Easy returns within 7 days of delivery.</p>
+    <button class="btn dark" id="checkout" disabled>Place order</button>
   </div>
 </aside>
 <div class="toast" id="toast" role="status"></div>
