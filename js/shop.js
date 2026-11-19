@@ -7,7 +7,7 @@ import { updateCount } from "./nav.js";
 
 const $ = id => document.getElementById(id);
 const fmt = n => "₹" + Number(n).toLocaleString("en-IN");
-const shirt = `<svg viewBox="0 0 100 100"><path fill="#fff" stroke="#111" stroke-width="3" stroke-linejoin="round" d="M35 12 22 18 6 34l12 12 8-6v46h48V40l8 6 12-12L78 18 65 12q-6 9-15 9t-15-9z"/></svg>`;
+const shirt = `<svg viewBox="0 0 100 100"><path fill="#fff" stroke="#111" stroke-width="2" stroke-linejoin="round" d="M35 12 22 18 6 34l12 12 8-6v46h48V40l8 6 12-12L78 18 65 12q-6 9-15 9t-15-9z"/></svg>`;
 
 let PRODUCTS = SAMPLE_PRODUCTS, cat = "All", query = "", sort = "featured";
 try {
@@ -26,7 +26,7 @@ function renderGrid() {
   if (sort === "high") list.sort((a, b) => b.price - a.price);
   $("grid").innerHTML = list.length ? list.map(p => `
     <article class="card">
-      <div class="art" style="background:${p.color}">${p.tag ? `<span class="tag">${p.tag}</span>` : ""}${shirt}</div>
+      <div class="art">${p.tag ? `<span class="tag">${p.tag}</span>` : ""}${p.image ? `<img src="${p.image}" alt="${p.name}" loading="lazy">` : shirt}</div>
       <div class="info">
         <h3>${p.name}</h3><span class="meta">${p.cat}</span>
         <div class="row"><span class="price">${fmt(p.price)}</span>
@@ -42,7 +42,7 @@ function renderCart() {
   $("items").innerHTML = cart.length ? cart.map((i, idx) => {
     const p = PRODUCTS.find(x => x.id === i.id); if (!p) return "";
     total += p.price * i.qty;
-    return `<div class="item"><div class="thumb" style="background:${p.color}">${shirt}</div>
+    return `<div class="item"><div class="thumb">${p.image ? `<img src="${p.image}" alt="">` : shirt}</div>
       <div><strong>${p.name}</strong><div class="meta">Size ${i.size} · ${fmt(p.price)}</div>
       <div class="qty"><button data-dec="${idx}" aria-label="Less">−</button>${i.qty}<button data-inc="${idx}" aria-label="More">+</button></div></div>
       <button class="rm" data-rm="${idx}">Remove</button></div>`;

@@ -11,7 +11,7 @@ export function updateCount() {
 updateCount();
 
 const css = document.createElement("style");
-css.textContent = `.menu{position:relative}.dd{position:absolute;right:0;top:calc(100% + 8px);background:#fff;border:3px solid #111;border-radius:12px;min-width:220px;padding:8px;display:grid;gap:4px;z-index:60}.dd[hidden]{display:none}.dd a,.dd button{display:block;text-align:left;padding:8px 10px;border:0;background:none;border-radius:8px;font-weight:700;color:#111;text-decoration:none;cursor:pointer}.dd a:hover,.dd button:hover{background:#f4f1ff}.dd .who{padding:6px 10px;font-size:.82rem;color:#5a5670;word-break:break-all}`;
+css.textContent = `.menu{position:relative}.dd{position:absolute;right:0;top:calc(100% + 8px);background:#fff;border:1px solid #e4e1db;border-radius:0;min-width:220px;padding:8px;display:grid;gap:4px;z-index:60}.dd[hidden]{display:none}.dd a,.dd button{display:block;text-align:left;padding:8px 10px;border:0;background:none;font-weight:700;color:#111;text-decoration:none;cursor:pointer}.dd a:hover,.dd button:hover{background:#f4f1ff}.dd .who{padding:6px 10px;font-size:.82rem;color:#5a5670;word-break:break-all}`;
 document.head.appendChild(css);
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
@@ -23,7 +23,7 @@ onAuthStateChanged(auth, user => {
   menu?.remove(); menu = null;
   if (user) {
     const name = user.displayName || user.email.split("@")[0];
-    hello.textContent = ""; btn.hidden = true;
+    hello.textContent = ""; btn.style.display = "none";
     menu = document.createElement("div"); menu.className = "menu";
     menu.innerHTML = `<button class="btn white sm" id="menuBtn">👤 ${esc(name)} ▾</button>
       <div class="dd" hidden>
@@ -38,7 +38,7 @@ onAuthStateChanged(auth, user => {
     menu.querySelector("#menuBtn").onclick = e => { e.stopPropagation(); dd.hidden = !dd.hidden; };
     menu.querySelector("#menuOut").onclick = () => signOut(auth);
   } else {
-    hello.textContent = ""; btn.hidden = false;
+    hello.textContent = ""; btn.style.display = "";
     btn.textContent = "Log in";
     btn.onclick = () => { location.href = "login.html"; };
   }
