@@ -12,7 +12,7 @@ export function updateCount() {
 updateCount();
 
 const css = document.createElement("style");
-css.textContent = `.menu{position:relative}.dd{position:absolute;right:0;top:calc(100% + 8px);background:#fff;border:1px solid #e4e1db;border-radius:0;min-width:220px;padding:8px;display:grid;gap:4px;z-index:60}.dd[hidden]{display:none}.dd a,.dd button{display:block;text-align:left;padding:8px 10px;border:0;background:none;font-weight:700;color:#111;text-decoration:none;cursor:pointer}.dd a:hover,.dd button:hover{background:#f4f1ff}.dd .who{padding:6px 10px;font-size:.82rem;color:#5a5670;word-break:break-all}`;
+css.textContent = `.menu{position:relative}.dd{position:absolute;right:0;top:calc(100% + 8px);background:#fff;border:1px solid #e4e1db;border-radius:0;min-width:220px;padding:8px;display:grid;gap:4px;z-index:60}.dd[hidden]{display:none}.dd a,.dd button{display:block;text-align:left;padding:8px 10px;border:0;background:none;font-weight:700;color:#111;text-decoration:none;cursor:pointer}.dd a:hover,.dd button:hover{background:#f4f1ff}#menuBtn{max-width:40vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.dd{max-width:calc(100vw - 24px)}.dd .who{padding:6px 10px;font-size:.82rem;color:#5a5670;word-break:break-all}`;
 document.head.appendChild(css);
 
 const esc = s => String(s).replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
