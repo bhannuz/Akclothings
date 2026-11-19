@@ -31,7 +31,8 @@ table.t{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e4
     <div class="tabs main" id="tabs">
       <button class="chip" data-tab="dash" aria-pressed="true">Dashboard</button>
       <button class="chip" data-tab="orders" aria-pressed="false">Orders</button>
-      <button class="chip" data-tab="users" aria-pressed="false">Users</button>
+      <button class="chip" data-tab="users" aria-pressed="false">Customers</button>
+      <button class="chip" data-tab="reqs" aria-pressed="false">Requests</button>
       <button class="chip" data-tab="stock" aria-pressed="false">Stock</button>
       <button class="chip" data-tab="cats" aria-pressed="false">Categories</button>
     </div>
@@ -57,8 +58,19 @@ table.t{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e4
     </section>
 
     <section id="tab-users" hidden>
-      <h1 class="section-title">Users &amp; logins</h1>
+      <h1 class="section-title">Customers</h1>
+      <div class="stats" id="userStats"></div>
+      <div class="row" style="margin:0 0 12px;gap:8px;flex-wrap:wrap">
+        <input id="userSearch" placeholder="Search name, email, mobile, city, pincode" style="flex:1;min-width:220px">
+        <button class="btn sm white" id="exAll" type="button">Export all CSV</button>
+        <button class="btn sm pink" id="exOpt" type="button">Export alert list CSV</button>
+      </div>
       <div class="wrap"><table class="t" id="userList"></table></div>
+    </section>
+
+    <section id="tab-reqs" hidden>
+      <h1 class="section-title">Customer requests</h1>
+      <div class="wrap"><table class="t" id="reqList"></table></div>
     </section>
 
     <section id="tab-cats" hidden>

@@ -33,11 +33,22 @@ table.t{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e4
         <label>City<input id="city" required></label>
         <label>Pincode<input id="pincode" required pattern="[0-9]{6}" placeholder="500001"></label>
       </div>
+      <label style="display:flex;gap:8px;align-items:center;font-weight:400"><input type="checkbox" id="opt" style="width:auto"> Send me stock updates &amp; offers</label>
       <p class="msg" id="msg" role="status"></p>
       <button class="btn pink" type="submit">Save</button>
     </form>
     <h2 class="section-title" id="orders" style="margin-top:40px">My orders</h2>
     <div class="wrap"><table class="t" id="list"></table></div>
+    <h2 class="section-title" style="margin-top:40px">Contact us</h2>
+    <form id="reqForm" class="panel">
+      <div class="two">
+        <label>Request type<select id="rType"><option>Product request</option><option>Back in stock alert</option><option>Order help</option><option>Other</option></select></label>
+        <label>Message<input id="rMsg" required placeholder="Tell us what you need"></label>
+      </div>
+      <p class="msg" id="rmsg" role="status"></p>
+      <button class="btn pink" type="submit">Send request</button>
+    </form>
+    <div class="wrap" style="margin-top:14px"><table class="t" id="reqList"></table></div>
   </div>
 </main>
 <script type="module" src="js/profile.js"></script>
