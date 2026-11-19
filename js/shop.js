@@ -83,7 +83,7 @@ $("checkout").onclick = async () => {
   if (!user) { toast("Log in to place your order"); setTimeout(() => { location.href = "login.html"; }, 900); return; }
   const items = getCart().map(i => {
     const p = PRODUCTS.find(x => x.id === i.id);
-    return { id: i.id, name: p.name, size: i.size, qty: i.qty, price: p.price };
+    return { id: i.id, name: p.name, size: i.size, qty: i.qty, price: p.price, cost: p.cost || 0 };
   });
   const total = items.reduce((n, i) => n + i.price * i.qty, 0);
   try {
