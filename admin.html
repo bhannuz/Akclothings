@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Admin – VAKON</title>
+<link href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@700;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+  <a class="logo" href="index.html">VAKON</a>
+  <div class="actions"><a class="btn white sm" href="index.html">View shop</a><button class="btn sm" id="logout">Log out</button></div>
+</header>
+<main class="admin">
+  <p id="gate" class="meta">Checking access...</p>
+  <div id="panel" hidden>
+    <h1 class="section-title">Add a product</h1>
+    <form id="form" class="panel">
+      <label>Product photo<input id="image" type="file" accept="image/*" required></label>
+      <img id="preview" class="preview" alt="Photo preview" hidden>
+      <label>Name<input id="name" required placeholder="Cloud Oversized Tee"></label>
+      <div class="two">
+        <label>Category<input id="cat" list="cats" required placeholder="Tees"><datalist id="cats"></datalist></label>
+        <label>Price (₹)<input id="price" type="number" min="1" required placeholder="999"></label>
+      </div>
+      <div class="two">
+        <label>Sizes (comma separated)<input id="sizes" value="S,M,L,XL" required></label>
+        <label>Badge (optional)<input id="tag" placeholder="New"></label>
+      </div>
+      <label>Card background colour<input id="color" type="color" value="#ffb3d1"></label>
+      <p class="msg" id="msg" role="status"></p>
+      <button class="btn pink" id="save" type="submit">Add product</button>
+    </form>
+    <h2 class="section-title" style="margin-top:40px">Your products</h2>
+    <div id="list"></div>
+  </div>
+</main>
+<script type="module" src="js/admin.js"></script>
+</body>
+</html>
