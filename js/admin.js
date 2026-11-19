@@ -11,7 +11,7 @@ const fmt = n => "₹" + Number(n || 0).toLocaleString("en-IN");
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const when = t => t?.toDate ? t.toDate().toLocaleString("en-IN") : "-";
 const STATUSES = ["new", "shipped", "delivered", "cancelled"];
-let products = [], orders = [], users = [], expenses = [];
+let products = [], orders = [], users = [], expenses = [], cats = [];
 
 onAuthStateChanged(auth, user => {
   if (!user) { location.href = "login.html?next=admin.html"; return; }
@@ -27,7 +27,7 @@ $("logout").onclick = () => signOut(auth).then(() => { location.href = "index.ht
 $("tabs").onclick = e => {
   const t = e.target.dataset.tab; if (!t) return;
   document.querySelectorAll("#tabs .chip").forEach(b => b.setAttribute("aria-pressed", b.dataset.tab === t));
-  ["dash", "orders", "users", "stock"].forEach(n => { $("tab-" + n).hidden = n !== t; });
+  ["dash", "orders", "users", "stock", "cats"].forEach(n => { $("tab-" + n).hidden = n !== t; });
 };
 
 async function load(name) {
@@ -37,7 +37,7 @@ async function load(name) {
 async function loadAll() {
   gsay("");
   try {
-    [products, orders, users, expenses] = await Promise.all(["products", "orders", "users", "expenses"].map(load));
+    [products, orders, users, expenses, cats] = await Promise.all(["products", "orders", "users", "expenses", "categories"].map(load));
   } catch (err) {
     console.error(err);
     gsay(err.message.includes("permission") ? "Permission denied. Update your Firestore rules (admin must read orders, users, expenses)." : err.message);
@@ -45,7 +45,7 @@ async function loadAll() {
   render();
 }
 
-const live = () => orders.filter(o => o.status !== "cancelled");
+const live = () => orders.filter(o => o.status !== "cancelled" && o.returnStatus !== "refunded");
 const sold = id => live().reduce((n, o) => n + (o.items || []).filter(i => i.id === id).reduce((m, i) => m + i.qty, 0), 0);
 
 function render() {
@@ -58,15 +58,21 @@ function render() {
   const stat = (l, v, cls = "") => `<div class="stat ${cls}"><span class="meta">${l}</span><b>${v}</b></div>`;
   $("stats").innerHTML = stat("Revenue", fmt(revenue)) + stat("Cost of goods sold", fmt(cogs)) + stat("Gross profit", fmt(gross), gross >= 0 ? "good" : "bad") +
     stat("Expenses", fmt(exp)) + stat(net >= 0 ? "Net profit" : "Net loss", fmt(Math.abs(net)), net >= 0 ? "good" : "bad") +
-    stat("Stock value (at cost)", fmt(stockVal)) + stat("Orders", live().length + " / " + orders.length) + stat("Users", users.length);
+    stat("Stock value (at cost)", fmt(stockVal)) + stat("Orders", live().length + " / " + orders.length) + stat("Users", users.length) +
+    stat("Payments received", fmt(live().filter(o => o.paymentStatus === "paid").reduce((n, o) => n + (o.total || 0), 0))) +
+    stat("Returns pending", orders.filter(o => o.returnStatus === "requested").length, orders.some(o => o.returnStatus === "requested") ? "bad" : "");
   $("expList").innerHTML = `<tr><th>Date</th><th>Description</th><th>Amount</th><th></th></tr>` + (expenses.length ? expenses.map(e =>
     `<tr><td>${when(e.createdAt)}</td><td>${esc(e.desc)}</td><td>${fmt(e.amount)}</td><td><button class="btn sm white" data-delexp="${e.id}">Delete</button></td></tr>`).join("") : `<tr><td colspan="4">No expenses yet.</td></tr>`);
 
   // Orders
   const os = [...orders].sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-  $("orderList").innerHTML = `<tr><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Status</th></tr>` + (os.length ? os.map(o =>
-    `<tr><td>${when(o.createdAt)}</td><td>${esc(o.name || "")}<br>${esc(o.email)}<br>${esc(o.phone || "")}<br>${esc(o.address || "")}</td><td>${(o.items || []).map(i => `${esc(i.name)} (${esc(i.size)}) ×${i.qty}`).join("<br>")}</td><td>${fmt(o.total)}</td>
-    <td><select data-status="${o.id}">${STATUSES.map(s => `<option${s === o.status ? " selected" : ""}>${s}</option>`).join("")}</select></td></tr>`).join("") : `<tr><td colspan="5">No orders yet.</td></tr>`);
+  const opt = (list, cur) => list.map(s => `<option${s === cur ? " selected" : ""}>${s}</option>`).join("");
+  $("orderList").innerHTML = `<tr><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Return</th></tr>` + (os.length ? os.map(o =>
+    `<tr><td>${when(o.createdAt)}</td><td>${esc(o.name || "")}<br>${esc(o.email)}<br>${esc(o.phone || "")}<br>${esc(o.address || "")}</td>
+    <td>${(o.items || []).map(i => `${esc(i.name)} (${esc(i.size)}) ×${i.qty}`).join("<br>")}</td><td>${fmt(o.total)}</td>
+    <td>${esc((o.paymentMethod || "-").toUpperCase())}<br>${esc(o.paymentRef || "")}<br><select data-pay="${o.id}">${opt(["pending", "paid", "failed"], o.paymentStatus || "pending")}</select></td>
+    <td><select data-status="${o.id}">${opt(STATUSES, o.status)}</select></td>
+    <td>${o.returnStatus ? `${esc(o.returnReason || "")}<br><select data-ret="${o.id}">${opt(["requested", "approved", "rejected", "refunded"], o.returnStatus)}</select>` : "-"}</td></tr>`).join("") : `<tr><td colspan="7">No orders yet.</td></tr>`);
 
   // Users
   const us = [...users].sort((a, b) => (b.lastLogin?.seconds || 0) - (a.lastLogin?.seconds || 0));
@@ -74,7 +80,11 @@ function render() {
     `<tr><td>${esc(u.email)}</td><td>${esc(u.name || "-")}</td><td>${when(u.createdAt)}</td><td>${when(u.lastLogin)}</td><td>${u.loginCount || 0}</td><td>${orders.filter(o => o.uid === u.id).length}</td></tr>`).join("") : `<tr><td colspan="6">No users yet.</td></tr>`);
 
   // Stock
-  $("cats").innerHTML = [...new Set(products.map(r => r.cat))].map(c => `<option value="${esc(c)}">`).join("");
+  const cur = $("cat").value;
+  $("cat").innerHTML = cats.length ? cats.map(c => `<option>${esc(c.name)}</option>`).join("") : `<option value="">Add categories first</option>`;
+  if (cur) $("cat").value = cur;
+  $("catList").innerHTML = `<tr><th>Category</th><th>Products</th><th></th></tr>` + (cats.length ? cats.map(c =>
+    `<tr><td>${esc(c.name)}</td><td>${products.filter(p => p.cat === c.name).length}</td><td><button class="btn sm white" data-delcat="${c.id}">Delete</button></td></tr>`).join("") : `<tr><td colspan="3">No categories yet.</td></tr>`);
   $("list").innerHTML = `<tr><th></th><th>Product</th><th>Cost</th><th>Price</th><th>Stock in</th><th>Sold</th><th>Balance</th><th>Add stock</th><th></th></tr>` + (products.length ? products.map(p => {
     const s = sold(p.id), bal = (p.stock || 0) - s;
     return `<tr><td><div class="thumb" style="background:${esc(p.color || "#fff")}">${p.image ? `<img src="${p.image}" alt="" style="width:100%;height:100%;object-fit:cover">` : ""}</div></td>
@@ -143,6 +153,11 @@ document.addEventListener("click", async e => {
   try {
     if (d.del && confirm("Delete this product?")) { await deleteDoc(doc(db, "products", d.del)); loadAll(); }
     if (d.delexp && confirm("Delete this expense?")) { await deleteDoc(doc(db, "expenses", d.delexp)); loadAll(); }
+    if (d.delcat) {
+      const c = cats.find(x => x.id === d.delcat);
+      if (products.some(p => p.cat === c.name)) return gsay("Can't delete: products still use " + c.name + ".");
+      if (confirm("Delete category " + c.name + "?")) { await deleteDoc(doc(db, "categories", d.delcat)); loadAll(); }
+    }
     if (d.addstock) {
       const q = Number($("add" + d.addstock).value);
       if (!q) return gsay("Enter a quantity.");
@@ -151,7 +166,20 @@ document.addEventListener("click", async e => {
   } catch (err) { gsay(err.message); }
 });
 document.addEventListener("change", async e => {
-  const id = e.target.dataset?.status; if (!id) return;
-  try { await updateDoc(doc(db, "orders", id), { status: e.target.value }); loadAll(); }
+  const d = e.target.dataset || {}, v = e.target.value;
+  const patch = d.status ? { status: v, ...(v === "delivered" ? { deliveredAt: serverTimestamp() } : {}) } : d.pay ? { paymentStatus: v } : d.ret ? { returnStatus: v } : null;
+  if (!patch) return;
+  try { await updateDoc(doc(db, "orders", d.status || d.pay || d.ret), patch); loadAll(); }
   catch (err) { gsay(err.message); }
 });
+async function addCat(name) {
+  if (cats.some(c => c.name.toLowerCase() === name.toLowerCase())) return;
+  await addDoc(collection(db, "categories"), { name, order: Date.now() });
+}
+$("catForm").onsubmit = async e => {
+  e.preventDefault();
+  try { await addCat($("catName").value.trim()); $("catForm").reset(); loadAll(); } catch (err) { gsay(err.message); }
+};
+$("catDefaults").onclick = async () => {
+  try { for (const n of ["Tees", "Bottoms", "Hoodies", "Jackets"]) await addCat(n); loadAll(); } catch (err) { gsay(err.message); }
+};

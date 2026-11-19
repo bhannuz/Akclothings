@@ -1,13 +1,14 @@
 // Profile page: edit name/phone/address, see my orders.
 import { auth, db } from "./firebase.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { doc, getDoc, setDoc, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { doc, getDoc, setDoc, updateDoc, serverTimestamp, collection, getDocs, query, where } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 const $ = id => document.getElementById(id);
 const say = (t, ok = false) => { $("msg").textContent = t; $("msg").className = "msg" + (ok ? " ok" : ""); };
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;" }[c]));
 const fmt = n => "₹" + Number(n || 0).toLocaleString("en-IN");
 const FIELDS = ["name", "phone", "address", "city", "pincode"];
+import { RETURN_DAYS } from "./config.js";
 let user;
 
 $("logout").onclick = () => signOut(auth).then(() => { location.href = "index.html"; });
@@ -34,8 +35,18 @@ async function loadOrders() {
   try {
     const snap = await getDocs(query(collection(db, "orders"), where("uid", "==", user.uid)));
     const rows = snap.docs.map(d => ({ id: d.id, ...d.data() })).sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
-    $("list").innerHTML = `<tr><th>Date</th><th>Items</th><th>Total</th><th>Status</th></tr>` + (rows.length ? rows.map(o =>
+    const canReturn = o => o.status === "delivered" && !o.returnStatus && ((o.deliveredAt || o.createdAt)?.seconds || 0) * 1000 + RETURN_DAYS * 864e5 > Date.now();
+    $("list").innerHTML = `<tr><th>Date</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Return</th></tr>` + (rows.length ? rows.map(o =>
       `<tr><td>${o.createdAt?.toDate ? o.createdAt.toDate().toLocaleString("en-IN") : "-"}</td>
-      <td>${(o.items || []).map(i => `${esc(i.name)} (${esc(i.size)}) ×${i.qty}`).join("<br>")}</td><td>${fmt(o.total)}</td><td>${esc(o.status)}</td></tr>`).join("") : `<tr><td colspan="4">No orders yet.</td></tr>`);
+      <td>${(o.items || []).map(i => `${esc(i.name)} (${esc(i.size)}) ×${i.qty}`).join("<br>")}</td><td>${fmt(o.total)}</td>
+      <td>${esc((o.paymentMethod || "-").toUpperCase())}<br>${esc(o.paymentStatus || "")}</td><td>${esc(o.status)}</td>
+      <td>${o.returnStatus ? esc(o.returnStatus) : canReturn(o) ? `<button class="btn sm white" data-return="${o.id}">Request return</button>` : "-"}</td></tr>`).join("") : `<tr><td colspan="6">No orders yet.</td></tr>`);
   } catch (err) { console.error(err); $("list").innerHTML = `<tr><td>Couldn't load orders. Check Firestore rules.</td></tr>`; }
 }
+
+$("list").onclick = async e => {
+  const id = e.target.dataset.return; if (!id) return;
+  const reason = prompt("Reason for return?"); if (!reason) return;
+  try { await updateDoc(doc(db, "orders", id), { returnStatus: "requested", returnReason: reason.trim(), returnRequestedAt: serverTimestamp() }); loadOrders(); }
+  catch (err) { console.error(err); alert("Couldn't request return. Check Firestore rules."); }
+};

@@ -2,6 +2,7 @@
 import { auth, db } from "./firebase.js";
 import { collection, getDocs, addDoc, getDoc, doc, serverTimestamp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { SAMPLE_PRODUCTS } from "./data.js";
+import { UPI_ID } from "./config.js";
 import { getCart, addItem, changeQty, removeItem, clearCart } from "./cart.js";
 import { updateCount } from "./nav.js";
 
@@ -9,15 +10,17 @@ const $ = id => document.getElementById(id);
 const fmt = n => "₹" + Number(n).toLocaleString("en-IN");
 const shirt = `<svg viewBox="0 0 100 100"><path fill="#fff" stroke="#111" stroke-width="2" stroke-linejoin="round" d="M35 12 22 18 6 34l12 12 8-6v46h48V40l8 6 12-12L78 18 65 12q-6 9-15 9t-15-9z"/></svg>`;
 
-let PRODUCTS = SAMPLE_PRODUCTS, cat = "All", query = "", sort = "featured";
+let CATS = [], PRODUCTS = SAMPLE_PRODUCTS, cat = "All", query = "", sort = "featured";
 try {
   const snap = await getDocs(collection(db, "products"));
   const live = snap.docs.map(d => ({ id: d.id, ...d.data() }));
   if (live.length) PRODUCTS = live;
 } catch (e) { console.warn("Using sample products", e); }
 
+try { CATS = (await getDocs(collection(db, "categories"))).docs.map(d => d.data()).sort((a, b) => (a.order || 0) - (b.order || 0)).map(c => c.name); } catch (e) {}
+
 function renderChips() {
-  const cats = ["All", ...new Set(PRODUCTS.map(p => p.cat))];
+  const cats = ["All", ...[...new Set([...CATS, ...PRODUCTS.map(p => p.cat)])].filter(c => PRODUCTS.some(p => p.cat === c))];
   $("chips").innerHTML = cats.map(c => `<button class="chip" aria-pressed="${c === cat}" data-cat="${c}">${c}</button>`).join("");
 }
 function renderGrid() {
@@ -72,6 +75,8 @@ $("items").onclick = e => {
   if (d.rm !== undefined) removeItem(+d.rm);
   renderCart();
 };
+$("upiId").textContent = UPI_ID;
+$("pay").onchange = e => { $("upiBox").hidden = e.target.value !== "upi"; };
 $("openCart").onclick = () => setCart(true);
 $("closeCart").onclick = $("overlay").onclick = () => setCart(false);
 document.addEventListener("keydown", e => { if (e.key === "Escape") setCart(false); });
@@ -81,6 +86,8 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") setCart(fals
 $("checkout").onclick = async () => {
   const user = auth.currentUser;
   if (!user) { toast("Log in to place your order"); setTimeout(() => { location.href = "login.html"; }, 900); return; }
+  const method = $("pay").value, ref = $("utr").value.trim();
+  if (method === "upi" && ref.length < 6) { toast("Enter your UPI transaction ID"); return; }
   let prof = {};
   try { prof = (await getDoc(doc(db, "users", user.uid))).data() || {}; } catch (e) {}
   if (!prof.address || !prof.phone) { toast("Add your delivery address first"); setTimeout(() => { location.href = "profile.html"; }, 900); return; }
@@ -90,8 +97,8 @@ $("checkout").onclick = async () => {
   });
   const total = items.reduce((n, i) => n + i.price * i.qty, 0);
   try {
-    await addDoc(collection(db, "orders"), { uid: user.uid, email: user.email, name: prof.name || "", phone: prof.phone, address: [prof.address, prof.city, prof.pincode].filter(Boolean).join(", "), items, total, status: "new", createdAt: serverTimestamp() });
-    clearCart(); renderCart(); setCart(false); toast("Order placed. Thanks!");
+    await addDoc(collection(db, "orders"), { uid: user.uid, email: user.email, name: prof.name || "", phone: prof.phone, address: [prof.address, prof.city, prof.pincode].filter(Boolean).join(", "), items, total, status: "new", paymentMethod: method, paymentRef: method === "upi" ? ref : "", paymentStatus: "pending", createdAt: serverTimestamp() });
+    clearCart(); $("utr").value = ""; renderCart(); setCart(false); toast("Order placed. Thanks!");
   } catch (e) { console.error(e); toast("Order failed. Check your Firestore rules."); }
 };
 
