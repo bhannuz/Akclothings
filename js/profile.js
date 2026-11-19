@@ -15,17 +15,17 @@ $("logout").onclick = () => signOut(auth).then(() => { location.href = "index.ht
 onAuthStateChanged(auth, async u => {
   if (!u) { location.href = "login.html?next=profile.html"; return; }
   user = u; $("gate").hidden = true; $("panel").hidden = false;
-  $("email").value = u.email;
+  $("email").value = u.email || u.phoneNumber || "";
   try {
     const d = (await getDoc(doc(db, "users", u.uid))).data() || {};
-    FIELDS.forEach(f => { $(f).value = d[f] || (f === "name" ? u.displayName || "" : ""); });
+    FIELDS.forEach(f => { $(f).value = d[f] || (f === "name" ? u.displayName || "" : f === "phone" ? (u.phoneNumber || "").replace("+91", "") : ""); });
   } catch (e) { console.warn(e); }
   loadOrders();
 });
 
 $("form").onsubmit = async e => {
   e.preventDefault(); say("Saving...", true);
-  const data = { email: user.email };
+  const data = { email: user.email || "" };
   FIELDS.forEach(f => { data[f] = $(f).value.trim(); });
   try { await setDoc(doc(db, "users", user.uid), data, { merge: true }); say("Saved.", true); }
   catch (err) { console.error(err); say(err.message.includes("permission") ? "Permission denied. Check your Firestore rules." : err.message); }
