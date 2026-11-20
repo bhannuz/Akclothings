@@ -12,7 +12,7 @@
 </head>
 <body>
 <header>
-  <a class="logo" href="index.html"><img src="assets/logo-header.svg" alt="Wear[M]e"></a>
+  <a class="logo" href="index.html"><img src="assets/logo-header.svg" alt="Wear[M]e" onerror="this.replaceWith(Object.assign(document.createElement('b'),{className:'logo-txt',textContent:'WEAR[M]E'}))"></a>
   <div class="actions">
     <span id="hello"></span>
     <button class="btn white sm" id="authBtn">Log in</button>
@@ -21,14 +21,15 @@
 </header>
 <section class="hero">
   <h1 class="sr">Wear[M]e. Men wear me.</h1>
-  <img src="assets/images/hero.jpg" alt="Wear[M]e logo in gold on black, with the line Men wear me." fetchpriority="high">
+  <img src="assets/images/hero.jpg" alt="Wear[M]e logo in gold on black, with the line Men wear me." fetchpriority="high" onerror="this.style.display='none';this.nextElementSibling.style.display='grid'">
+  <div class="hero-fb"><div>WEAR[M]E<small>MEN WEAR ME.</small></div></div>
   <a class="btn" href="#shop">Shop the drop</a>
 </section>
 <div class="ticker"><div>Free shipping over ₹500 &nbsp;·&nbsp; Easy 7-day returns &nbsp;·&nbsp; New season now live</div></div>
 <div class="perks"><div>Free shipping over ₹500</div><div>Easy returns</div><div>Secure checkout</div></div>
 
 <section class="edit" id="edit">
-  <img src="assets/images/everyday-edit.jpg" alt="Wear[M]e dark tee with a cardstock hang tag and a woven neck label" loading="lazy">
+  <img src="assets/images/everyday-edit.jpg" alt="Wear[M]e dark tee with a cardstock hang tag and a woven neck label" loading="lazy" onerror="this.style.display='none'">
   <div>
     <p class="eyebrow">New Season</p>
     <h2>The Everyday Edit</h2>
@@ -74,5 +75,6 @@
 
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/shop.js"></script>
+<script type="module" src="js/presence.js"></script>
 </body>
 </html>
