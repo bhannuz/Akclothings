@@ -1,7 +1,7 @@
 // Admin: dashboard (profit/loss), orders, users, stock.
 import { auth, db } from "./firebase.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { collection, getDocs, addDoc, deleteDoc, updateDoc, doc, serverTimestamp, increment } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, getDocs, addDoc, deleteDoc, updateDoc, doc, serverTimestamp, increment, query, where, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { ADMIN_EMAILS } from "./config.js";
 
 const $ = id => document.getElementById(id);
@@ -21,6 +21,7 @@ onAuthStateChanged(auth, user => {
   }
   $("gate").hidden = true; $("panel").hidden = false;
   loadAll();
+  cleanPresence(); refreshOnline(); setInterval(refreshOnline, 20000);
 });
 $("logout").onclick = () => signOut(auth).then(() => { location.href = "index.html"; });
 
@@ -49,6 +50,7 @@ const live = () => orders.filter(o => o.status !== "cancelled" && o.returnStatus
 const sold = id => live().reduce((n, o) => n + (o.items || []).filter(i => i.id === id).reduce((m, i) => m + i.qty, 0), 0);
 
 function render() {
+  renderLive();
   // Dashboard
   const revenue = live().reduce((n, o) => n + (o.total || 0), 0);
   const cogs = live().reduce((n, o) => n + (o.items || []).reduce((m, i) => m + (i.cost ?? products.find(p => p.id === i.id)?.cost ?? 0) * i.qty, 0), 0);
@@ -84,14 +86,14 @@ function render() {
   if (cur) $("cat").value = cur;
   $("catList").innerHTML = `<tr><th>Category</th><th>Products</th><th></th></tr>` + (cats.length ? cats.map(c =>
     `<tr><td>${esc(c.name)}</td><td>${products.filter(p => p.cat === c.name).length}</td><td><button class="btn sm white" data-delcat="${c.id}">Delete</button></td></tr>`).join("") : `<tr><td colspan="3">No categories yet.</td></tr>`);
-  $("list").innerHTML = `<tr><th></th><th>Product</th><th>Cost</th><th>Price</th><th>Stock in</th><th>Sold</th><th>Balance</th><th>Add stock</th><th></th></tr>` + (products.length ? products.map(p => {
+  $("list").innerHTML = `<tr><th></th><th>Product</th><th>Photo size</th><th>Cost</th><th>Price</th><th>Stock in</th><th>Sold</th><th>Balance</th><th>Add stock</th><th></th></tr>` + (products.length ? products.map(p => {
     const s = sold(p.id), bal = (p.stock || 0) - s;
     return `<tr><td><div class="thumb" style="background:${esc(p.color || "#fff")}">${p.image ? `<img src="${p.image}" alt="" style="width:100%;height:100%;object-fit:cover">` : ""}</div></td>
-      <td><strong>${esc(p.name)}</strong><div class="meta">${esc(p.cat)}</div></td><td>${fmt(p.cost)}</td><td>${fmt(p.price)}</td><td>${p.stock || 0}</td><td>${s}</td>
+      <td><strong>${esc(p.name)}</strong><div class="meta">${esc(p.cat)}</div></td><td>${p.image ? fmtSize(p.image.length) : "-"}</td><td>${fmt(p.cost)}</td><td>${fmt(p.price)}</td><td>${p.stock || 0}</td><td>${s}</td>
       <td class="${bal <= 5 ? "low" : ""}">${bal}</td>
       <td><input type="number" min="1" id="add${p.id}" placeholder="qty"> <button class="btn sm pink" data-addstock="${p.id}">Add</button></td>
       <td><button class="btn sm white" data-del="${p.id}">Delete</button></td></tr>`;
-  }).join("") : `<tr><td colspan="9">No products yet. Add your first one above.</td></tr>`);
+  }).join("") : `<tr><td colspan="10">No products yet. Add your first one above.</td></tr>`);
 }
 
 // Photos are resized in the browser and saved inside the product document.
@@ -219,3 +221,40 @@ function exportCsv(list, file) {
 }
 $("exAll").onclick = () => exportCsv(filteredUsers(), "customers.csv");
 $("exOpt").onclick = () => exportCsv(filteredUsers().filter(u => u.marketingOptIn), "alert-list.csv");
+
+// ---- Live visitors & image storage ----
+const GB = 1024 ** 3;
+const fmtSize = b => b >= 1048576 ? (b / 1048576).toFixed(2) + " MB" : b >= 1024 ? (b / 1024).toFixed(1) + " KB" : Math.round(b) + " B";
+let online = null; // { total, loggedIn }
+function renderLive() {
+  const sizes = products.filter(p => p.image).map(p => p.image.length); // stored size of each photo
+  const total = sizes.reduce((n, b) => n + b, 0);
+  const stat = (l, v, cls = "") => `<div class="stat ${cls}"><span class="meta">${l}</span><b>${v}</b></div>`;
+  $("liveStats").innerHTML =
+    stat("Online now", online ? online.total : "...", "good") +
+    stat("Logged-in users online", online ? online.loggedIn : "...") +
+    stat("Guests online", online ? online.total - online.loggedIn : "...") +
+    stat("Image storage used", fmtSize(total)) +
+    stat("Images uploaded", sizes.length) +
+    stat("Average per image", sizes.length ? fmtSize(total / sizes.length) : "-") +
+    stat("Largest image", sizes.length ? fmtSize(Math.max(...sizes)) : "-") +
+    stat("Free 1 GB quota used", (total / GB * 100).toFixed(2) + "%");
+}
+async function refreshOnline() {
+  try {
+    const snap = await getDocs(query(collection(db, "presence"), where("ts", ">", Date.now() - 120000)));
+    const rows = snap.docs.map(d => d.data());
+    online = { total: rows.length, loggedIn: rows.filter(r => r.uid).length };
+    $("liveNote").textContent = "Online = active in the last 2 minutes. Updates every 20 seconds.";
+  } catch (err) {
+    console.warn(err); online = null;
+    $("liveNote").textContent = "Can't read live visitors yet. Add the presence rule in Firestore (see setup steps).";
+  }
+  renderLive();
+}
+async function cleanPresence() { // remove records older than 1 day
+  try {
+    const old = await getDocs(query(collection(db, "presence"), where("ts", "<", Date.now() - 864e5), limit(50)));
+    await Promise.all(old.docs.map(d => deleteDoc(d.ref)));
+  } catch (e) {}
+}
