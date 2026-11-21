@@ -1,7 +1,7 @@
 // Admin: dashboard (profit/loss), orders, users, stock.
 import { auth, db } from "./firebase.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { collection, getDocs, addDoc, deleteDoc, updateDoc, doc, serverTimestamp, increment, query, where, limit } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { collection, getDocs, addDoc, deleteDoc, updateDoc, doc, serverTimestamp, increment, query, where, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 import { ADMIN_EMAILS } from "./config.js";
 
 const $ = id => document.getElementById(id);
@@ -21,7 +21,7 @@ onAuthStateChanged(auth, user => {
   }
   $("gate").hidden = true; $("panel").hidden = false;
   loadAll();
-  cleanPresence(); refreshOnline(); setInterval(refreshOnline, 20000);
+  cleanPresence(); refreshOnline(); setInterval(refreshOnline, 20000); watchOrders();
 });
 $("logout").onclick = () => signOut(auth).then(() => { location.href = "index.html"; });
 
@@ -62,6 +62,7 @@ function render() {
     stat("Expenses", fmt(exp)) + stat(net >= 0 ? "Net profit" : "Net loss", fmt(Math.abs(net)), net >= 0 ? "good" : "bad") +
     stat("Stock value (at cost)", fmt(stockVal)) + stat("Orders", live().length + " / " + orders.length) + stat("Users", users.length) +
     stat("Payments received", fmt(live().filter(o => o.paymentStatus === "paid").reduce((n, o) => n + (o.total || 0), 0))) +
+    stat("UPI payments to verify", orders.filter(o => o.paymentMethod === "upi" && (o.paymentStatus || "pending") === "pending").length, orders.some(o => o.paymentMethod === "upi" && (o.paymentStatus || "pending") === "pending") ? "bad" : "") +
     stat("Returns pending", orders.filter(o => o.returnStatus === "requested").length, orders.some(o => o.returnStatus === "requested") ? "bad" : "") +
     stat("New customers (7 days)", users.filter(u => Date.now() - (u.createdAt?.seconds || 0) * 1000 < 7 * 864e5).length) +
     stat("Open requests", reqs.filter(r => r.status !== "resolved").length, reqs.some(r => r.status === "open") ? "bad" : "");
@@ -74,7 +75,7 @@ function render() {
   $("orderList").innerHTML = `<tr><th>Date</th><th>Customer</th><th>Items</th><th>Total</th><th>Payment</th><th>Status</th><th>Return</th></tr>` + (os.length ? os.map(o =>
     `<tr><td>${when(o.createdAt)}</td><td>${esc(o.name || "")}<br>${esc(o.email || "")}<br>${esc(o.phone || "")}<br>${esc(o.address || "")}</td>
     <td>${(o.items || []).map(i => `${esc(i.name)} (${esc(i.size)}) ×${i.qty}`).join("<br>")}</td><td>${fmt(o.total)}</td>
-    <td>${esc((o.paymentMethod || "-").toUpperCase())}<br>${esc(o.paymentRef || "")}<br><select data-pay="${o.id}">${opt(["pending", "paid", "failed"], o.paymentStatus || "pending")}</select></td>
+    <td>${esc((o.paymentMethod || "-").toUpperCase())}<br>${esc(o.paymentRef || "")}${dupUtr(o) ? ' <b style="color:#a1262b">(duplicate UTR!)</b>' : ""}<br><select data-pay="${o.id}">${opt(["pending", "paid", "failed"], o.paymentStatus || "pending")}</select></td>
     <td><select data-status="${o.id}">${opt(STATUSES, o.status)}</select></td>
     <td>${o.returnStatus ? `${esc(o.returnReason || "")}<br><select data-ret="${o.id}">${opt(["requested", "approved", "rejected", "refunded"], o.returnStatus)}</select>` : "-"}</td></tr>`).join("") : `<tr><td colspan="7">No orders yet.</td></tr>`);
 
@@ -258,3 +259,44 @@ async function cleanPresence() { // remove records older than 1 day
     await Promise.all(old.docs.map(d => deleteDoc(d.ref)));
   } catch (e) {}
 }
+
+// The same UPI reference on two orders usually means someone reused a payment.
+const dupUtr = o => o.paymentRef && orders.filter(x => x.paymentRef === o.paymentRef).length > 1;
+
+// ---- New order alerts: sound, banner, tab title and (if allowed) a desktop notification ----
+function beep() {
+  try {
+    const c = new (window.AudioContext || window.webkitAudioContext)();
+    [880, 1175].forEach((f, i) => {
+      const o = c.createOscillator(), g = c.createGain(), t = c.currentTime + i * 0.2;
+      o.frequency.value = f; o.connect(g); g.connect(c.destination);
+      g.gain.setValueAtTime(0.2, t); g.gain.exponentialRampToValueAtTime(0.001, t + 0.18);
+      o.start(t); o.stop(t + 0.2);
+    });
+  } catch (e) {}
+}
+const baseTitle = document.title; let unseen = 0, firstSnap = true;
+document.addEventListener("visibilitychange", () => { if (!document.hidden) { unseen = 0; document.title = baseTitle; } });
+function alertOrder(o) {
+  const msg = `New order ${fmt(o.total || 0)} from ${o.name || o.email || "a customer"} (${(o.paymentMethod || "").toUpperCase()})`;
+  $("alertBar").hidden = false; $("alertBar").textContent = "🔔 " + msg;
+  beep();
+  if (document.hidden) { unseen++; document.title = `(${unseen}) New order! – ${baseTitle}`; }
+  try { if (Notification.permission === "granted") new Notification("New order – Wear[M]e", { body: msg, icon: "assets/icon-512.png" }); } catch (e) {}
+}
+function watchOrders() {
+  onSnapshot(collection(db, "orders"), snap => {
+    if (firstSnap) { firstSnap = false; return; } // ignore orders that already existed
+    const added = snap.docChanges().filter(c => c.type === "added");
+    if (!added.length) return;
+    added.forEach(c => alertOrder(c.doc.data()));
+    loadAll();
+  }, err => console.warn(err));
+}
+$("enableAlerts").onclick = async () => {
+  beep();
+  try {
+    const r = await Notification.requestPermission();
+    $("alertState").textContent = r === "granted" ? "Desktop notifications are on. Keep this page open in a tab." : "Notifications are blocked in your browser settings. Sound and banner still work.";
+  } catch (e) {}
+};

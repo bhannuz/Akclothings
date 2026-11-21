@@ -31,7 +31,7 @@ const digits = v => String(v || "").replace(/\D/g, "").slice(-10);
 function setMode(m) {
   mode = m;
   const su = m === "signup";
-  $("title").textContent = su ? "Join VAKON" : "Welcome back";
+  $("title").textContent = su ? "Join Wear[M]e" : "Welcome back";
   $("submit").textContent = su ? "Create account" : "Log in";
   $("idLabel").textContent = su ? "Email" : "Email or mobile number";
   $("email").placeholder = su ? "you@mail.com" : "you@mail.com or 10-digit mobile";
