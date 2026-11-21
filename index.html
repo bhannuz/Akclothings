@@ -64,8 +64,11 @@
       <select id="pay"><option value="cod">Cash on delivery</option><option value="upi">UPI (pay now)</option></select>
     </label>
     <div id="upiBox" hidden>
-      <p class="meta">Pay to UPI ID <b id="upiId"></b>, then enter the transaction ID.</p>
-      <input id="utr" placeholder="UPI transaction / UTR number" style="width:100%;margin-top:6px">
+      <p class="meta">Pay <b id="upiAmt"></b> to UPI ID <b id="upiId"></b></p>
+      <div class="upi-actions"><a class="btn sm" id="upiLink" href="#">Pay with UPI app</a><button type="button" class="btn sm white" id="upiCopy">Copy UPI ID</button></div>
+      <img id="upiQr" class="upi-qr" alt="UPI QR code" hidden>
+      <p class="meta">After paying, enter the 12-digit UPI reference (UTR) from your payment app. Your order is confirmed once we verify the payment.</p>
+      <input id="utr" inputmode="numeric" maxlength="12" placeholder="12-digit UPI reference (UTR)" style="width:100%;margin-top:6px">
     </div>
     <p class="meta">Easy returns within 7 days of delivery.</p>
     <button class="btn dark" id="checkout" disabled>Place order</button>

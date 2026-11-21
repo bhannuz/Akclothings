@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Product – Wear[M]e</title>
+<link rel="icon" href="assets/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="assets/favicon-32.png" type="image/png" sizes="32x32">
+<link rel="apple-touch-icon" href="assets/apple-touch-icon.png">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header>
+  <a class="logo" href="index.html"><img src="assets/logo-header.svg" alt="Wear[M]e" onerror="this.replaceWith(Object.assign(document.createElement('b'),{className:'logo-txt',textContent:'WEAR[M]E'}))"></a>
+  <div class="actions">
+    <span id="hello"></span>
+    <button class="btn white sm" id="authBtn">Log in</button>
+    <button class="btn sm" id="openCart">Bag (<span id="count">0</span>)</button>
+  </div>
+</header>
+<main class="pd" id="detail"><p class="empty">Loading...</p></main>
+<footer>© 2026 Wear[M]e. All rights reserved.</footer>
+<div class="toast" id="toast" role="status"></div>
+<script type="module" src="js/nav.js"></script>
+<script type="module" src="js/product.js"></script>
+<script type="module" src="js/presence.js"></script>
+</body>
+</html>
