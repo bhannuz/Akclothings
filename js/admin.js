@@ -1,8 +1,8 @@
 // Admin: dashboard (profit/loss), orders, users, stock.
 import { auth, db } from "./firebase.js";
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-import { collection, getDocs, addDoc, deleteDoc, updateDoc, doc, serverTimestamp, increment, query, where, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-import { ADMIN_EMAILS } from "./config.js";
+import { collection, getDocs, addDoc, deleteDoc, updateDoc, setDoc, getDoc, doc, serverTimestamp, increment, query, where, limit, onSnapshot } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+import { ADMIN_EMAILS, UPI_ID } from "./config.js";
 
 const $ = id => document.getElementById(id);
 const say = (t, ok = false) => { $("msg").textContent = t; $("msg").className = "msg" + (ok ? " ok" : ""); };
@@ -21,7 +21,7 @@ onAuthStateChanged(auth, user => {
   }
   $("gate").hidden = true; $("panel").hidden = false;
   loadAll();
-  cleanPresence(); refreshOnline(); setInterval(refreshOnline, 20000); watchOrders();
+  cleanPresence(); refreshOnline(); setInterval(refreshOnline, 20000); watchOrders(); loadPaySettings();
 });
 $("logout").onclick = () => signOut(auth).then(() => { location.href = "index.html"; });
 
@@ -299,4 +299,19 @@ $("enableAlerts").onclick = async () => {
     const r = await Notification.requestPermission();
     $("alertState").textContent = r === "granted" ? "Desktop notifications are on. Keep this page open in a tab." : "Notifications are blocked in your browser settings. Sound and banner still work.";
   } catch (e) {}
+};
+
+// ---- Payment settings: the UPI ID is saved in Firestore, so changing it needs no code edit ----
+async function loadPaySettings() {
+  try {
+    const s = await getDoc(doc(db, "settings", "payment"));
+    if (s.exists() && s.data().upiId) { $("upiInput").value = s.data().upiId; $("upiState").textContent = "UPI is live at checkout."; return; }
+  } catch (e) { console.warn(e); }
+  $("upiState").textContent = /yourname/i.test(UPI_ID) ? "Not set yet. UPI stays hidden at checkout until you save your UPI ID." : "Using the UPI ID from js/config.js.";
+}
+$("upiSave").onclick = async () => {
+  const v = $("upiInput").value.trim();
+  if (!/^[\w.\-]{2,}@[a-zA-Z]{2,}$/.test(v)) { $("upiState").textContent = "That doesn't look like a UPI ID. Example: 9876543210@ybl"; return; }
+  try { await setDoc(doc(db, "settings", "payment"), { upiId: v }); $("upiState").textContent = "Saved. Customers now pay to " + v; }
+  catch (e) { console.error(e); $("upiState").textContent = "Could not save. Publish the settings rule in Firestore first."; }
 };

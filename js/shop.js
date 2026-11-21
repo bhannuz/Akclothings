@@ -78,10 +78,13 @@ $("items").onclick = e => {
   if (d.rm !== undefined) removeItem(+d.rm);
   renderCart();
 };
+// UPI ID: saved from the admin panel (Firestore settings/payment); falls back to js/config.js
+let upiId = UPI_ID;
+try { const st = await getDoc(doc(db, "settings", "payment")); if (st.exists() && st.data().upiId) upiId = st.data().upiId; } catch (e) {}
 // ---- UPI payment (no gateway): customer pays our UPI ID, then enters the 12-digit UTR; admin verifies ----
 const cartTotal = () => getCart().reduce((n, i) => { const p = PRODUCTS.find(x => x.id === i.id); return n + (p ? p.price * i.qty : 0); }, 0);
-if (/yourname/i.test(UPI_ID)) $("pay").querySelector('option[value="upi"]').remove(); // hidden until a real UPI ID is set in js/config.js
-$("upiId").textContent = UPI_ID;
+if (/yourname/i.test(upiId)) $("pay").querySelector('option[value="upi"]').remove(); // hidden until a real UPI ID is set in js/config.js
+$("upiId").textContent = upiId;
 const PAY_MINUTES = 10; // time a customer has to finish paying
 let payTimer = null;
 const mmss = n => String(Math.floor(n / 60)).padStart(2, "0") + ":" + String(n % 60).padStart(2, "0");
@@ -91,7 +94,7 @@ $("utr").oninput = e => { e.target.value = e.target.value.replace(/\D/g, ""); };
 // Step 1: "Place order" with UPI opens this pop-up and creates the QR for the exact amount.
 function openPay() {
   const amt = cartTotal();
-  const link = `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent("Wear[M]e")}&am=${amt}&cu=INR&tn=${encodeURIComponent("Wear[M]e order")}`;
+  const link = `upi://pay?pa=${encodeURIComponent(upiId)}&pn=${encodeURIComponent("Wear[M]e")}&am=${amt}&cu=INR&tn=${encodeURIComponent("Wear[M]e order")}`;
   $("payAmt").textContent = fmt(amt); $("upiLink").href = link; $("payMsg").textContent = "";
   $("payForm").hidden = false; $("payDone").hidden = true; $("utr").value = ""; $("payConfirm").disabled = false;
   try {
@@ -111,7 +114,7 @@ function openPay() {
 function closePay() { $("payModal").hidden = true; clearInterval(payTimer); }
 function showPayDone() { clearInterval(payTimer); $("payForm").hidden = true; $("payDone").hidden = false; }
 $("payClose").onclick = $("payDoneClose").onclick = closePay;
-$("upiCopy").onclick = () => navigator.clipboard.writeText(UPI_ID).then(() => toast("UPI ID copied"), () => toast(UPI_ID));
+$("upiCopy").onclick = () => navigator.clipboard.writeText(upiId).then(() => toast("UPI ID copied"), () => toast(upiId));
 $("openCart").onclick = () => setCart(true);
 $("closeCart").onclick = $("overlay").onclick = () => setCart(false);
 document.addEventListener("keydown", e => { if (e.key === "Escape") setCart(false); });
