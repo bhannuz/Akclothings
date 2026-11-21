@@ -174,3 +174,6 @@ body:has(aside.open){overflow:hidden}
 .alertrow{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-bottom:8px}
 .alertbar{background:#0e0e0e;color:#c9a55c;padding:12px 16px;margin:10px 0;font-weight:600}
 @media (max-width:800px){.pd-grid{grid-template-columns:1fr}.pd-img{position:static}}
+
+.upi-qr{image-rendering:pixelated;background:#fff}
+.upi-qr[hidden],#qrNote[hidden]{display:none}
