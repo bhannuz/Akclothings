@@ -4,6 +4,7 @@ import { collection, getDocs, addDoc, getDoc, doc, serverTimestamp } from "https
 import { SAMPLE_PRODUCTS } from "./data.js";
 import { UPI_ID } from "./config.js";
 import { notifyOwner } from "./notify.js";
+import qrcode from "./qrcode-lib.js"; // QR generator hosted in this repo, no internet service needed
 import { realEmail } from "./id.js";
 import { getCart, addItem, changeQty, removeItem, clearCart } from "./cart.js";
 import { updateCount } from "./nav.js";
@@ -90,8 +91,10 @@ async function showUpi() {
   const link = `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent("Wear[M]e")}&am=${amt}&cu=INR&tn=${encodeURIComponent("Wear[M]e order")}`;
   $("upiAmt").textContent = fmt(amt); $("upiLink").href = link;
   if (qrFor === link) return; qrFor = link;
-  try { const QR = (await import("https://cdn.jsdelivr.net/npm/qrcode@1.5.4/+esm")).default; $("upiQr").src = await QR.toDataURL(link, { width: 180, margin: 1 }); $("upiQr").hidden = false; }
-  catch (e) { $("upiQr").hidden = true; }
+  try {
+    const qr = qrcode(0, "M"); qr.addData(link); qr.make();
+    $("upiQr").src = qr.createDataURL(6, 3); $("upiQr").hidden = false; $("qrNote").hidden = true;
+  } catch (e) { console.warn("QR failed", e); $("upiQr").hidden = true; $("qrNote").hidden = false; }
 }
 $("pay").onchange = showUpi;
 $("upiCopy").onclick = () => navigator.clipboard.writeText(UPI_ID).then(() => toast("UPI ID copied"), () => toast(UPI_ID));
