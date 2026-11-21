@@ -32,9 +32,9 @@ function renderGrid() {
   if (sort === "high") list.sort((a, b) => b.price - a.price);
   $("grid").innerHTML = list.length ? list.map(p => `
     <article class="card">
-      <a class="cardlink" href="product.html?id=${encodeURIComponent(p.id)}"><div class="art">${p.tag ? `<span class="tag">${p.tag}</span>` : ""}${p.image ? `<img src="${p.image}" alt="${p.name}" loading="lazy">` : shirt}</div></a>
+      <a class="cardlink" href="product.html?id=${encodeURIComponent(p.id)}" target="_blank" rel="noopener"><div class="art">${p.tag ? `<span class="tag">${p.tag}</span>` : ""}${p.image ? `<img src="${p.image}" alt="${p.name}" loading="lazy">` : shirt}</div></a>
       <div class="info">
-        <h3><a class="cardlink" href="product.html?id=${encodeURIComponent(p.id)}">${p.name}</a></h3><span class="meta">${p.cat}</span>
+        <h3><a class="cardlink" href="product.html?id=${encodeURIComponent(p.id)}" target="_blank" rel="noopener">${p.name}</a></h3><span class="meta">${p.cat}</span>
         <div class="row"><span class="price">${fmt(p.price)}</span>
           <select aria-label="Size for ${p.name}" id="size${p.id}">${p.sizes.map(s => `<option>${s}</option>`).join("")}</select></div>
         <button class="btn pink sm" data-add="${p.id}">Add to bag</button>
@@ -55,7 +55,6 @@ function renderCart() {
   }).join("") : `<p class="empty">Your bag is empty. Go add some fits.</p>`;
   $("total").textContent = fmt(total);
   $("checkout").disabled = !cart.length;
-  showUpi();
 }
 function setCart(open) {
   $("drawer").classList.toggle("open", open);
@@ -83,20 +82,35 @@ $("items").onclick = e => {
 const cartTotal = () => getCart().reduce((n, i) => { const p = PRODUCTS.find(x => x.id === i.id); return n + (p ? p.price * i.qty : 0); }, 0);
 if (/yourname/i.test(UPI_ID)) $("pay").querySelector('option[value="upi"]').remove(); // hidden until a real UPI ID is set in js/config.js
 $("upiId").textContent = UPI_ID;
-let qrFor = "";
-async function showUpi() {
-  const on = $("pay").value === "upi";
-  $("upiBox").hidden = !on; if (!on) return;
+const PAY_MINUTES = 10; // time a customer has to finish paying
+let payTimer = null;
+const mmss = n => String(Math.floor(n / 60)).padStart(2, "0") + ":" + String(n % 60).padStart(2, "0");
+$("pay").onchange = () => { $("upiHint").hidden = $("pay").value !== "upi"; };
+$("utr").oninput = e => { e.target.value = e.target.value.replace(/\D/g, ""); };
+
+// Step 1: "Place order" with UPI opens this pop-up and creates the QR for the exact amount.
+function openPay() {
   const amt = cartTotal();
   const link = `upi://pay?pa=${encodeURIComponent(UPI_ID)}&pn=${encodeURIComponent("Wear[M]e")}&am=${amt}&cu=INR&tn=${encodeURIComponent("Wear[M]e order")}`;
-  $("upiAmt").textContent = fmt(amt); $("upiLink").href = link;
-  if (qrFor === link) return; qrFor = link;
+  $("payAmt").textContent = fmt(amt); $("upiLink").href = link; $("payMsg").textContent = "";
+  $("payForm").hidden = false; $("payDone").hidden = true; $("utr").value = ""; $("payConfirm").disabled = false;
   try {
     const qr = qrcode(0, "M"); qr.addData(link); qr.make();
     $("upiQr").src = qr.createDataURL(6, 3); $("upiQr").hidden = false; $("qrNote").hidden = true;
   } catch (e) { console.warn("QR failed", e); $("upiQr").hidden = true; $("qrNote").hidden = false; }
+  setCart(false); $("payModal").hidden = false;
+  let left = PAY_MINUTES * 60;
+  clearInterval(payTimer);
+  const tick = () => {
+    $("payTimer").textContent = left > 0 ? `Complete payment within ${mmss(left)}` : "Time is up. Close this window and press Place order again.";
+    if (left <= 0) { clearInterval(payTimer); $("payConfirm").disabled = true; }
+    left--;
+  };
+  tick(); payTimer = setInterval(tick, 1000);
 }
-$("pay").onchange = showUpi;
+function closePay() { $("payModal").hidden = true; clearInterval(payTimer); }
+function showPayDone() { clearInterval(payTimer); $("payForm").hidden = true; $("payDone").hidden = false; }
+$("payClose").onclick = $("payDoneClose").onclick = closePay;
 $("upiCopy").onclick = () => navigator.clipboard.writeText(UPI_ID).then(() => toast("UPI ID copied"), () => toast(UPI_ID));
 $("openCart").onclick = () => setCart(true);
 $("closeCart").onclick = $("overlay").onclick = () => setCart(false);
@@ -104,11 +118,21 @@ document.addEventListener("keydown", e => { if (e.key === "Escape") setCart(fals
 
 // Checkout needs a logged-in user. Saves the order to Firestore "orders".
 // Payment: cash on delivery, or UPI (customer pays our UPI ID and enters the UTR; admin verifies it and marks the order paid).
-$("checkout").onclick = async () => {
+async function startCheckout() { // the "Place order" button
+  const user = auth.currentUser;
+  if (!user) { toast("Log in to place your order"); setTimeout(() => { location.href = "login.html"; }, 900); return; }
+  if ($("pay").value !== "upi") return placeOrder();
+  let prof = {};
+  try { prof = (await getDoc(doc(db, "users", user.uid))).data() || {}; } catch (e) {}
+  if (!prof.address || !prof.phone) { toast("Add your delivery address first"); setTimeout(() => { location.href = "profile.html"; }, 900); return; }
+  openPay();
+}
+// Step 2 (UPI): customer pays, types the UTR and confirms. COD orders go straight here.
+async function placeOrder() {
   const user = auth.currentUser;
   if (!user) { toast("Log in to place your order"); setTimeout(() => { location.href = "login.html"; }, 900); return; }
   const method = $("pay").value, ref = $("utr").value.trim();
-  if (method === "upi" && !/^\d{12}$/.test(ref)) { toast("Enter the 12-digit UPI reference (UTR)"); return; }
+  if (method === "upi" && !/^\d{12}$/.test(ref)) { $("payMsg").textContent = "Enter the 12-digit UPI reference (UTR) from your payment app."; return; }
   let prof = {};
   try { prof = (await getDoc(doc(db, "users", user.uid))).data() || {}; } catch (e) {}
   if (!prof.address || !prof.phone) { toast("Add your delivery address first"); setTimeout(() => { location.href = "profile.html"; }, 900); return; }
@@ -117,12 +141,16 @@ $("checkout").onclick = async () => {
     return { id: i.id, name: p.name, size: i.size, qty: i.qty, price: p.price, cost: p.cost || 0 };
   });
   const total = items.reduce((n, i) => n + i.price * i.qty, 0);
+  $("payConfirm").disabled = true;
   try {
     await addDoc(collection(db, "orders"), { uid: user.uid, email: realEmail(user), name: prof.name || "", phone: prof.phone, address: [prof.address, prof.city, prof.pincode].filter(Boolean).join(", "), items, total, status: "new", paymentMethod: method, paymentRef: method === "upi" ? ref : "", paymentStatus: "pending", createdAt: serverTimestamp() });
     notifyOwner({ name: prof.name, phone: prof.phone, address: [prof.address, prof.city, prof.pincode].filter(Boolean).join(", "), items, total, method, ref });
-    clearCart(); $("utr").value = ""; renderCart(); setCart(false); toast(method === "upi" ? "Order placed. We'll confirm once your payment is verified." : "Order placed. Thanks!");
-  } catch (e) { console.error(e); toast("Order failed. Check your Firestore rules."); }
-};
+    clearCart(); $("utr").value = ""; renderCart(); setCart(false); method === "upi" ? showPayDone() : toast("Order placed. Thanks!");
+  } catch (e) { console.error(e); $("payConfirm").disabled = false; $("payMsg").textContent = "Order failed. Please try again."; toast("Order failed. Check your Firestore rules."); }
+}
+$("checkout").onclick = startCheckout;
+$("payConfirm").onclick = placeOrder;
 
+{ const qc = new URLSearchParams(location.search).get("cat"); if (qc) cat = qc; } // from the menu: index.html?cat=Name
 renderChips(); renderGrid(); renderCart();
 if (location.hash === "#bag") setCart(true); // opened from "Buy now" on a product page

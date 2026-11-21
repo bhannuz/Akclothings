@@ -4,7 +4,6 @@ import { doc, getDoc } from "https://www.gstatic.com/firebasejs/10.12.2/firebase
 import { SAMPLE_PRODUCTS } from "./data.js";
 import { addItem } from "./cart.js";
 import { updateCount } from "./nav.js";
-import { sizeChartFor } from "./sizechart.js";
 import { FREE_SHIPPING_MIN, RETURN_DAYS } from "./config.js";
 
 const $ = id => document.getElementById(id);
@@ -15,10 +14,13 @@ let tt;
 function toast(msg) { const t = $("toast"); t.textContent = msg; t.classList.add("show"); clearTimeout(tt); tt = setTimeout(() => t.classList.remove("show"), 2000); }
 $("openCart").onclick = () => { location.href = "index.html#bag"; };
 
+let sizeChartFor = () => null; // size chart is optional: the page still works if js/sizechart.js is missing
+try { ({ sizeChartFor } = await import("./sizechart.js")); } catch (e) { console.warn("sizechart.js not found", e); }
+
 const id = new URLSearchParams(location.search).get("id");
 let p = null;
 if (id) {
-  try { const s = await getDoc(doc(db, "products", id)); if (s.exists()) p = { id: s.id, ...s.data() }; } catch (e) {}
+  try { const s = await Promise.race([getDoc(doc(db, "products", id)), new Promise((_, r) => setTimeout(() => r(new Error("timeout")), 7000))]); if (s.exists()) p = { id: s.id, ...s.data() }; } catch (e) {}
   if (!p) p = SAMPLE_PRODUCTS.find(x => x.id === id) || null;
 }
 
@@ -44,7 +46,7 @@ if (!p) {
         <ul class="pd-info"><li>Free shipping on orders over ₹${FREE_SHIPPING_MIN}</li><li>Easy returns within ${RETURN_DAYS} days of delivery</li><li>Pay with UPI or cash on delivery</li></ul>
       </div>
     </div>
-    <section class="chart" id="sizechart">
+    ${chart ? `<section class="chart" id="sizechart">
       <h2>${esc(chart.title)}</h2>
       <div style="overflow-x:auto"><table>
         <tr>${chart.head.map(h => `<th>${h}</th>`).join("")}</tr>
@@ -53,7 +55,7 @@ if (!p) {
       <p class="meta">${esc(chart.note)}</p>
       <h3 style="margin-top:22px">How to measure</h3>
       <ul class="tips">${chart.tips.map(t => `<li>${esc(t)}</li>`).join("")}</ul>
-    </section>`;
+    </section>` : ""}`;
 
   $("sizes").onclick = e => {
     const s = e.target.dataset.s; if (!s) return;
