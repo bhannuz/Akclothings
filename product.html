@@ -10,12 +10,14 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<header>
+<header class="top">
+  <button class="hamb" id="menuToggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="sideMenu"><span></span><span></span><span></span></button>
   <a class="logo" href="index.html"><img src="assets/logo-header.svg" alt="Wear[M]e" onerror="this.replaceWith(Object.assign(document.createElement('b'),{className:'logo-txt',textContent:'WEAR[M]E'}))"></a>
   <div class="actions">
+    <button class="iconbtn" id="searchBtn" type="button" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
     <span id="hello"></span>
     <button class="btn white sm" id="authBtn">Log in</button>
-    <button class="btn sm" id="openCart">Bag (<span id="count">0</span>)</button>
+    <button class="iconbtn" id="openCart" type="button" aria-label="Open bag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="badge" id="count">0</span></button>
   </div>
 </header>
 <main class="pd" id="detail"><p class="empty">Loading...</p></main>
@@ -24,5 +26,15 @@
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/product.js"></script>
 <script type="module" src="js/presence.js"></script>
+<script type="module" src="js/menu.js"></script>
+<script>
+setTimeout(async () => {
+  const d = document.getElementById("detail");
+  if (d.textContent.trim() !== "Loading...") return;
+  const files = ["js/product.js", "js/data.js", "js/cart.js", "js/nav.js", "js/config.js", "js/id.js", "js/firebase.js"], miss = [];
+  for (const f of files) { try { const r = await fetch(f, { method: "HEAD" }); if (!r.ok) miss.push(f); } catch (e) { miss.push(f); } }
+  d.innerHTML = '<p class="empty">This page could not load.' + (miss.length ? " Missing files on your site: <b>" + miss.join(", ") + "</b>. Upload them and refresh." : " Open the browser console (F12) to see the error.") + ' <a href="index.html" style="text-decoration:underline">Back to shop</a></p>';
+}, 5000);
+</script>
 </body>
 </html>

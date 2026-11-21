@@ -17,7 +17,8 @@ table.t{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e4
 </style>
 </head>
 <body>
-<header>
+<header class="top">
+  <button class="hamb" id="menuToggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="sideMenu"><span></span><span></span><span></span></button>
   <a class="logo" href="index.html"><img src="assets/logo-header.svg" alt="Wear[M]e" onerror="this.replaceWith(Object.assign(document.createElement('b'),{className:'logo-txt',textContent:'WEAR[M]E'}))"></a>
   <div class="actions"><a class="btn white sm" href="index.html">Back to shop</a><button class="btn sm" id="logout">Log out</button></div>
 </header>
@@ -56,5 +57,6 @@ table.t{width:100%;border-collapse:collapse;background:#fff;border:1px solid #e4
 </main>
 <script type="module" src="js/profile.js"></script>
 <script type="module" src="js/presence.js"></script>
+<script type="module" src="js/menu.js"></script>
 </body>
 </html>

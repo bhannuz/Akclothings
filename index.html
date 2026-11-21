@@ -11,12 +11,14 @@
 <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
-<header>
+<header class="top">
+  <button class="hamb" id="menuToggle" type="button" aria-label="Open menu" aria-expanded="false" aria-controls="sideMenu"><span></span><span></span><span></span></button>
   <a class="logo" href="index.html"><img src="assets/logo-header.svg" alt="Wear[M]e" onerror="this.replaceWith(Object.assign(document.createElement('b'),{className:'logo-txt',textContent:'WEAR[M]E'}))"></a>
   <div class="actions">
+    <button class="iconbtn" id="searchBtn" type="button" aria-label="Search"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.5-3.5"/></svg></button>
     <span id="hello"></span>
     <button class="btn white sm" id="authBtn">Log in</button>
-    <button class="btn sm" id="openCart">Bag (<span id="count">0</span>)</button>
+    <button class="iconbtn" id="openCart" type="button" aria-label="Open bag"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linejoin="round"><path d="M5 8h14l-1 12H6L5 8z"/><path d="M9 8V6a3 3 0 0 1 6 0v2"/></svg><span class="badge" id="count">0</span></button>
   </div>
 </header>
 <section class="hero">
@@ -63,22 +65,42 @@
     <label>Payment method
       <select id="pay"><option value="cod">Cash on delivery</option><option value="upi">UPI (pay now)</option></select>
     </label>
-    <div id="upiBox" hidden>
-      <p class="meta">Pay <b id="upiAmt"></b> to UPI ID <b id="upiId"></b></p>
-      <div class="upi-actions"><a class="btn sm" id="upiLink" href="#">Pay with UPI app</a><button type="button" class="btn sm white" id="upiCopy">Copy UPI ID</button></div>
-      <img id="upiQr" class="upi-qr" alt="UPI QR code" hidden>
-      <p class="meta" id="qrNote" hidden>QR code unavailable right now. Use "Pay with UPI app" or copy the UPI ID.</p>
-      <p class="meta">After paying, enter the 12-digit UPI reference (UTR) from your payment app. Your order is confirmed once we verify the payment.</p>
-      <input id="utr" inputmode="numeric" maxlength="12" placeholder="12-digit UPI reference (UTR)" style="width:100%;margin-top:6px">
-    </div>
+    <p class="meta" id="upiHint" hidden>After you press Place order, a QR code appears. Scan it with any UPI app to pay.</p>
     <p class="meta">Easy returns within 7 days of delivery.</p>
     <button class="btn dark" id="checkout" disabled>Place order</button>
   </div>
 </aside>
 <div class="toast" id="toast" role="status"></div>
 
+<div class="paywrap" id="payModal" hidden>
+  <div class="paybox" role="dialog" aria-modal="true" aria-labelledby="payTitle">
+    <button class="rm" id="payClose" type="button" style="justify-self:end">Close</button>
+    <div id="payForm">
+      <h2 id="payTitle">Pay with UPI</h2>
+      <p class="meta" id="payTimer"></p>
+      <p class="pay-amt" id="payAmt"></p>
+      <img id="upiQr" class="upi-qr" alt="UPI QR code. Scan to pay.">
+      <p class="meta" id="qrNote" hidden>QR code unavailable. Use "Pay with UPI app" or copy the UPI ID.</p>
+      <p class="meta">Scan with GPay, PhonePe, Paytm or any UPI app.</p>
+      <div class="upi-actions" style="justify-content:center"><a class="btn sm" id="upiLink" href="#">Pay with UPI app</a><button type="button" class="btn sm white" id="upiCopy">Copy UPI ID</button></div>
+      <p class="meta">UPI ID: <b id="upiId"></b></p>
+      <p class="meta" style="margin-top:8px">After paying, enter the 12-digit UPI reference (UTR) from your payment app.</p>
+      <input id="utr" inputmode="numeric" maxlength="12" placeholder="12-digit UPI reference (UTR)" style="width:100%">
+      <p class="msg" id="payMsg" role="status"></p>
+      <button class="btn dark" id="payConfirm" type="button" style="width:100%">I've paid, confirm order</button>
+    </div>
+    <div id="payDone" hidden>
+      <h2>Order placed</h2>
+      <p>Thank you! We'll verify your payment and confirm your order shortly.</p>
+      <p class="meta">You can track it under My orders.</p>
+      <a class="btn dark" href="profile.html#orders">View my orders</a>
+      <button class="rm" id="payDoneClose" type="button">Continue shopping</button>
+    </div>
+  </div>
+</div>
 <script type="module" src="js/nav.js"></script>
 <script type="module" src="js/shop.js"></script>
 <script type="module" src="js/presence.js"></script>
+<script type="module" src="js/menu.js"></script>
 </body>
 </html>
